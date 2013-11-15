@@ -1,0 +1,720 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use feature qw(say);
+use Carp qw| cluck :DEFAULT |; #display the subroutines as they are approached
+use Config::IniFiles;
+use File::Copy;
+use diagnostics;
+use File::Spec;
+use File::Basename;
+use File::Temp qw/ tempfile tempdir /;
+use Cwd 'abs_path';
+use Cwd qw(realpath);
+use File::Path qw(make_path remove_tree);
+use Getopt::Long;
+
+# SYSTEM CONFIGURATION RETRIEVAL
+our $config;
+BEGIN {
+    our $VERSION = "__VERSION__";
+    delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
+    my ( $defaultconfig, $etcconfig );
+    if( -e "__pkgdatadir__/loctree3rc.default" ) { $defaultconfig = Config::IniFiles->new( -file => "__pkgdatadir__/loctree3rc.default" ); }
+    if( -e "__sysconfdir__/loctree3rc" ) { $etcconfig = Config::IniFiles->new( -file => "__sysconfdir__/loctree3rc", -import => $defaultconfig ); } else { $etcconfig = $defaultconfig; }
+    if( ( $ENV{LOCTREE3CONF} && -e "$ENV{LOCTREE3CONF}" ) || -e "$ENV{HOME}/.loctree3rc" ) { $config = Config::IniFiles->new( -file => $ENV{LOCTREE3CONF} || "$ENV{HOME}/.loctree3rc", -import => $etcconfig ); } else { $config = $etcconfig; }
+}
+
+# popularity contest
+if( system('pp_popcon_cnt', '-p', 'loctree3') == -1 ){ warn("The Rost Lab recommends you install the pp-popularity-contest package that provides pp_popcon_cnt:\n\nsudo apt-get install pp-popularity-contest\n"); }
+
+###########################################
+############# process input ###############
+
+my($inputDirPath,$outputFilePathRef,$domain,$tmpDirPath,$fastaFile,$blastMat,$lc2ResultsFile);
+my $debug=0;
+my $quiet=0;
+
+my $args_ok=GetOptions( 'indir=s'          =>  \$inputDirPath,
+                        'resfile=s'         =>  \$outputFilePathRef,
+                        'domain=s'      =>  \$domain,
+                        'tmpdir=s'      =>  \$tmpDirPath,
+                        'lc2res=s'     => \$lc2ResultsFile,
+                        'fasta=s'       => \$fastaFile,
+                        'blastmat=s'      => \$blastMat,
+                        'printdebug+'   => \$debug,
+                        'quiet+'        => \$quiet
+);
+
+my $outputFilePath = $outputFilePathRef;
+
+#####
+sub die_usage{
+    my $msg=shift;
+	eval{
+    say "\nDESCRIPTION:\nProtein sub-cellular localization prediction for proteins in all domains of life";
+	say "\nUSAGE:\nloctree3 -i <input directory> -r <result file> -d <domain> [OPTIONS]";
+    say "or";
+    say "loctree3 -f <fasta file> -b <psi-blast profile file> -r <result file> -d <domain> [OPTIONS]";
+	say "\nMANDATORY:";
+	say "-i, --indir <directory>\n\tInput directory with one [.fasta|.fa|.f] file and one [.profile|.blast|.psiBlast|.blastPsiMat] file for each sequence to be predicted. A .fasta file must contain exactly ONE protein sequence. Corresponding fasta and profile files must have the same prefix (i.e. if there is a file \"example.fasta\", there must also be a file \"example.profile). Or use --fasta and --blastmat";
+    say "\n-f, --fasta <file>\n\tFile containing exactly one fasta input sequence. This parameter must be used in combination with --blastmat";
+    say "\n-b --blastmat <file>\n\tFile containing exactly one evolutionary profile. This parameter must be used in combination with --fasta";
+	say "\n-r, --resfile <file>\n\tOutput result file in which each line contains the name of the sequence, the predicted sub-cellular localization, the reliability of the prediction and Gene Ontology (GO) terms.";
+    say "\n-d, --domain\n\tThe domain of the organism of the protein sequences to be predicted\n\tOptions:\n\t'arch' for Archaea\n\t'bact' for Bacteria\n\t'euka' for Eukaryota";
+	say "\nOPTIONS:";
+    say "\n-l, --lc2 <file>\n\tText file with LocTree2 predictions. For these proteins LocTree2 won't be run.";
+    say "\n-p, --printdebug\n\tPrint debugging messages";
+    say "\n-q, --quiet\n\tSilence progress messages";
+    say "\n-t, --tmpdir <directory>\n\tWorking directory. Intermediate files will be saved here. If not given, a temporary directory is used. The temporary directory is automatically removed at the end of a run when debugging is off";
+    }; warn "\n$msg\n";
+    exit(1);
+}
+#####
+
+if(!$inputDirPath)
+{
+    if(!$fastaFile)
+    {
+        die_usage("\nError: no input directory or input fasta file defined\n");
+    }
+}
+if($inputDirPath && $fastaFile)
+{
+    die_usage("\nError: please define either a directory containing both fasta and profile files or one fasta and one profile file\n");
+}
+if($fastaFile && !$blastMat)
+{
+    die_usage("\nError: no profile file defined\n");
+}
+if($blastMat && !$fastaFile)
+{
+    die_usage("\nError: no input fasta file defined\n");
+}
+die_usage("\nError: no output file defined\n") unless $outputFilePathRef;
+die_usage("\nError: no domain defined\n") unless $domain;
+die_usage("\nError: unknown argument\n") unless $args_ok;
+
+
+# check that the domain name is correct
+if($domain ne "arch" && $domain ne "bact" && $domain ne "euka")
+{
+    confess "\nError: Unknown domain $domain\nLocTree2 requires a domain tag to run.\nPlease use:\n'arch' for Archaea\n'bact' for Bacteria\n'euka' for Eukaryota\n";
+}
+
+# work from a tmp directory
+if ($tmpDirPath){
+    $tmpDirPath=Cwd::realpath( $tmpDirPath );
+}
+else {
+    $tmpDirPath=tempdir( "loctree3tmpXXXXXXXXXX", DIR => File::Spec->tmpdir(), CLEANUP => !$debug);
+}
+if( $debug ) { warn( "Working directory: '$tmpDirPath'\n" ); }
+
+# get input files
+my @files;
+if(!$fastaFile){
+    opendir our($inputDir), $inputDirPath ||  confess "\nError: Couldn't open dir '$inputDirPath': $!\n";
+    @files = readdir $inputDir;
+    closedir $inputDir;
+} 
+else 
+{
+    @files=($fastaFile);
+}
+
+# get fasta sequences to run PSI-BLAST
+my $combinedFastaFile4blast= File::Spec->catfile($tmpDirPath, "combinedFastaFile4Blast.txt");
+open COMBFASTAFILE4BLAST, ">$combinedFastaFile4blast" || confess "\nError: Couldn't open kernel input file $combinedFastaFile4blast: $!\n";
+
+my $fileExt;
+my $errorSeq="";
+my $sequence;
+my $fastaCounter=0;
+my $profileCounter=0;
+my $foundHeader=0;
+my $seqId;
+my $fasta;
+my %id_fastaFile_hash; #stores protein id as key and path to its fasta file as value
+
+foreach my $fastaFileName (@files)
+{
+	$fileExt = ($fastaFileName =~ m/([^.]+)$/)[0];
+	if(defined $fileExt || $fastaFile)
+    { 
+        if((($fileExt eq "fasta") || ($fileExt eq "fa") || ($fileExt eq "f")) || $fastaFile)
+        {
+            $foundHeader=0;
+            $seqId="";
+            $sequence="";
+           
+            if(!$fastaFile){$fasta=$inputDirPath."$fastaFileName";} else {$fasta=$fastaFile;}
+            open FASTAFILE, $fasta || confess "\nError: Couldn't open fasta file $fasta: $!\n";
+			while (my $faLine = <FASTAFILE>) 
+			{ 
+				chomp($faLine);
+    				if($faLine =~  m/^>/)
+    				{
+	    				if(! $sequence eq ""){
+                        die_usage("\nFasta file $fasta contains more than one entry.\nThis is not allowed.\nProgram will exit.\n");
+					    }	
+			    		my @spliti = split(/\s+/,substr($faLine,1));
+                        $seqId = $spliti[0];
+                        $id_fastaFile_hash{$seqId} = $fastaFileName;
+                        $fastaCounter++;
+                        $foundHeader=1;
+    				}
+    				elsif(! $faLine eq "")
+    				{
+                        $faLine =~ s/\s//g;
+				    	$sequence=$sequence.$faLine;
+    				}
+			}
+			close(FASTAFILE);
+           
+            if($foundHeader == 0){
+                confess("\nFasta file $fasta contains no opening tag '>' in the header.\nThis is not allowed.\nProgram will exit.\n");
+            }
+            if($sequence eq ""){
+                confess("\nFasta file $fasta contains no amino acid sequence.\nThis is not allowed.\nProgram will exit.\n");
+            }
+            if(! $seqId eq ""){
+                print COMBFASTAFILE4BLAST ">" . $seqId . "\n";
+                print COMBFASTAFILE4BLAST $sequence."\n";
+            }
+	    }
+    }
+}
+close(COMBFASTAFILE4BLAST);
+
+if( $debug ) { warn( "\nNumber fasta files read in " . "is " . $fastaCounter . ".\n"); }
+
+my @keys = keys %id_fastaFile_hash;
+my $size = @keys;
+
+if( !$quiet ){print "Number input fasta files is $size\n";}
+
+if($fastaCounter==0)
+{
+    die_usage("\nError: the directory $inputDirPath contains no fasta files.\n")
+} else {
+    if( !$quiet ){print "Printing results to ".$outputFilePath."\n";}
+}
+
+#temp fileis for predictions
+my $tmpPredLC2OutputFile = File::Spec->catfile($tmpDirPath, $domain.".lc2");
+my $tmpPredLC3OutputFile = File::Spec->catfile($tmpDirPath, $domain.".lc3");
+
+#run PSI-BLAST
+if( $debug ) { warn( "\nRunning Psi-Blast.\n"); }
+runPsiBlast($combinedFastaFile4blast);
+
+#if no annotation with Psi-Blast, run LocTree2
+if (keys(%id_fastaFile_hash) > 0){
+    #crete new dir in tmp folder to store files for LocTree2
+    if( $debug ) { warn( "\nCreate a new directory to store files for LocTree2.\n"); }
+    my $dir4LC2files = File::Spec->catfile($tmpDirPath, "data4lc2");
+    unless(mkdir $dir4LC2files) { confess "\nError: Unable to create directory $dir4LC2files\n";}
+    if( $debug ) { warn( "\nDirectory $dir4LC2files was created.\n"); }
+
+    #copy files relevant from input dir
+
+   # if($fastaFile){$fasta=$inputDirPath."$fastaFileName";} else {$fasta=$fastaFile;}
+    if($fastaFile)
+    {
+        $fasta=$fastaFile;
+    }
+    else
+    {
+        while (($seqId, $fastaFileName) = each(%id_fastaFile_hash))
+        {
+            $fasta=$inputDirPath."$fastaFileName";
+            system("cp $fastaFileName $dir4LC2files");
+            print "copied $fastaFileName to $dir4LC2files\n";
+        }
+    }
+    if( $debug ) { warn( "\nRunning LocTree2.\n"); }
+    my $loctree2Command = "loctree2 --in $dir4LC2files --resfile $tmpPredLC2OutputFile --domain $domain";
+    if( $debug ) { warn( "Executing loctree2 command:\n$loctree2Command\n" ); }
+    system($loctree2Command) && confess "\nError running loctree2 command: $!\n";
+}
+
+
+
+
+
+
+
+#############################################
+############## run PSI-BLAST ################
+sub runPsiBlast{
+
+    my $combinedFastaFile = shift;
+    my $dataDir = glob($config->val('loctree3', 'datadir'));
+    my $modelDB = File::Spec->catfile($dataDir, $domain.".SP13_11.DB");
+    my $tmpPsiBlastOutFile = File::Spec->catfile($tmpDirPath, $domain.".blastPsiOutTmp");
+
+    #run psi-blast command
+    my $psiBlastCommand = "blastpgp -F F -a 1 -j 3 -b 50 -e 1e-3 -h 1e-10 -d $modelDB -i $combinedFastaFile -o $tmpPsiBlastOutFile";
+    if( $debug ) { warn( "Executing PSI-BLAST command:\n$psiBlastCommand\n" ); }
+    system($psiBlastCommand) && confess "\nError running Psi-Blast command: $!\n";
+
+    #go through the predictions and print hits with the highest sequence identity in the tmp result file
+    open(PSIBLASTTMPLC3, "<$tmpPsiBlastOutFile") || confess ("\nError: Unable to open Psi-Blast predictions file $tmpPsiBlastOutFile: $!\n");
+    open(TMPLC3, ">$tmpPredLC3OutputFile") || confess ("\nError: Unable to open tmp LocTree3 results file $tmpPredLC3OutputFile: $!\n");
+    print TMPLC3 "#Localization Prediction using LocTree3\n";
+    if($domain eq "euka"){
+        print TMPLC3 "#Note: chloroplast and plastid classes are valid for plant proteins only.\n";
+        print TMPLC3 "#Therefore, if the origin of a non-plant protein is known, please consider predictions of these classes as mitochondrial.\n";
+    }
+    print TMPLC3 "#Domain: $domain\n";
+    print TMPLC3 "#\n";
+   
+    my $query="";
+    my $hit;
+    my $maxSeqId=0;
+    my $bestHit;
+    my $prevSeqId=0;
+    my $isConverged=0;
+    my $foundHitLength=0;
+    my $newQueryFound=0;
+    my $length;
+    my $seqId;
+    my $isNewHit;
+    my $random_number;
+    my $isFirst=0;
+    my @splitHits;
+    my $counter=0;
+
+
+    while (my $line = <PSIBLASTTMPLC3>)
+    {
+reg_blast_1:
+            if ($line =~ /^Query= (.+)/) 
+            {
+                $query = $1;
+                print "Query=$query\n";
+                $isConverged=0;
+                $hit="";
+                $prevSeqId=0;
+                $newQueryFound=1;
+                $maxSeqId=0;
+                $bestHit="";
+            }
+            elsif (($line =~ /Results from round 3/ || $line =~ /CONVERGED!/ || $line =~ / No hits found /) && ($newQueryFound==1)) 
+            {
+                $isConverged=1;
+                $newQueryFound=0;
+            }
+            elsif ($line =~ /^[>](.+)/ && $isConverged==1) 
+            {
+                    $hit = $1;
+                    $foundHitLength=0;
+
+reg_blast_2:
+                    while ($line = <PSIBLASTTMPLC3>) 
+                    {
+                        if($line !~ /Length =/ && $foundHitLength==0 )
+                        {
+                           $line=~ s/^\s+|\s+$//g;
+                           $hit = $hit . $line; 
+                        } 
+                        elsif ($line =~ /Length =/ && $foundHitLength==0)
+                        {
+                            $foundHitLength = 1;
+                        }
+                        elsif ($line =~ /^\s*Identities\s*=\s*(\d+)\/(\d+)\s*\(\d+\%\),\s*Positives\s*=\s*(\d+)\/\d+\s*\(\d+\%\)(,\s*Gaps\s*=\s*(\d+)\/\d+\s*\(\d+\%\))?/) 
+                        {
+                            $length = $2 - ($4 ? $5 : 0);
+                            $seqId = ($1 / $length) * 100; # percent sequence identity
+                            $seqId = ($seqId - 20)*10/8;   #normalization
+                            if($seqId<0)
+                            {
+                                $seqId=0;
+                            }
+                            $seqId = sprintf("%.1f",$seqId);
+                            if($prevSeqId < $seqId)
+                            {
+                                $maxSeqId=$seqId;
+                                $prevSeqId=$seqId;
+                                $bestHit=$hit;
+                            }
+                            elsif($prevSeqId == $seqId)
+                            {
+                                $random_number = int(rand(1));
+                                if($random_number==1)
+                                {
+                                    $maxSeqId=$seqId;
+                                    $prevSeqId=$seqId;
+                                    $bestHit=$hit;
+                                }
+
+                            }
+                            print "$hit\t$seqId; best hit: $bestHit with seqId $maxSeqId\n";
+                            $isNewHit=0;
+                        }
+                        elsif ($line =~ /^[>](.+)/) 
+                        {
+                            $hit = $1;
+                            goto reg_blast_2;
+                        }
+                        elsif ($line =~ /^Query= (.+)/) {
+                            if($isFirst==0)
+                            {
+                                print TMPLC3 "#PSI-BLAST annotations based on Swiss-Prot release 2013_11.\n";
+                                print TMPLC3 "#Protein Id\tScore\tLocalization\tGene Ontology Terms\n";
+                                $isFirst=1;
+
+                            }
+                            @splitHits = split(/#/,$bestHit);
+                            $maxSeqId = sprintf("%.0f",$maxSeqId);
+                            print TMPLC3 "$query\t$maxSeqId\t$splitHits[1]\t$splitHits[2]\n";
+                            delete($id_fastaFile_hash{$query});
+                            print "removed $query from the hashtable\n";
+                            $counter++;
+                            $isConverged=0;
+                            $query="";
+                            $hit="";
+                            goto reg_blast_1;
+                        }
+                    }
+            }
+    }
+    if($isConverged == 0 )
+    {
+        print "there was no round 3 word in $tmpPsiBlastOutFile for Query=$query\n";
+        print "program will exit!!!!\n\n";
+        exit 0;
+    }
+    elsif($bestHit ne "") 
+    {
+        if($isFirst==0)
+        {
+            print TMPLC3 "#PSI-BLAST annotations based on Swiss-Prot release 2013_11.\n";
+            print TMPLC3 "#Protein Id\tScore\tLocalization\tGene Ontology Terms\n";
+        }
+        @splitHits = split(/#/,$bestHit);
+        $maxSeqId = sprintf("%.0f",$maxSeqId);
+        print TMPLC3 "$query\t$maxSeqId\t$splitHits[1]\t$splitHits[2]\n";
+        delete($id_fastaFile_hash{$query});
+        print "removed $query from the hashtable\n";
+        $counter++;
+    }
+     
+    close(TMPLC3);
+    close(PSIBLASTTMPLC3);
+   if( !$quiet ){print "Number proteins predicted with PSI-BLAST is $counter\n";}
+}
+
+
+
+#############################################
+###run profkernel-workflow for predictions###
+sub predictionsMaker{
+
+    my $profileCounter=shift;
+	my $tmpDirPath=shift;
+	my $combinedFastaFile=shift;
+	my $combinedProfileFile=shift;
+	my $outputFilePath=shift;
+	my $errorSeq=shift;
+    my $domain=shift;
+	if( $debug ) { warn( "\nRunning profkernel-workflow." ); }
+    my $baseDir = glob($config->val('loctree2', 'basedir'));
+    my $dataDir = glob($config->val('loctree2', 'datadir'));
+    my $modelPath = File::Spec->catfile($dataDir, $domain."_model");
+    my $tmpWorkflowOutFile = File::Spec->catfile($tmpDirPath, $domain."_workflow.txt");
+	
+    #run profkernel-workflow command
+    if($profileCounter>0){
+        my $profkernelworkflowCommand = "profkernel-workflow -f $combinedFastaFile -p $combinedProfileFile -m $modelPath  -o $tmpWorkflowOutFile -q";
+	    if( $debug ) { warn( "Executing profkernel-workflow command:\n$profkernelworkflowCommand\n" ); }
+        system($profkernelworkflowCommand) && confess "\nError running profkernel-workflow command: $!\n";
+    }
+
+    #print predictions in a temp file
+    my $predOutputFile = File::Spec->catfile($tmpDirPath, "predictions.txt");
+	open(TMPLC3, ">$predOutputFile") || confess ("\nError: Unable to open predictions file $predOutputFile: $!\n");
+	print TMPLC3 "#Localization Prediction using LocTree2\n";
+	if($domain eq "euka"){
+		print TMPLC3 "#Note: chloroplast and plastid classes are valid for plant proteins only.\n"; 
+		print TMPLC3 "#Therefore, if the origin of a non-plant protein is known, please consider predictions of these classes as mitochondrial.\n";
+	}
+	print TMPLC3 "#Domain: $domain\n";
+	if(length($errorSeq) > 1)
+	{
+		print TMPLC3 "# No predictions were possible for:\n";
+        print TMPLC3 $errorSeq;
+		print TMPLC3 "# \n";
+	}
+
+    if($profileCounter>0){
+	    print TMPLC3 "#Protein Id\tLocalization\tScore\n"; 
+    	open(WFLOWOUT, "<$tmpWorkflowOutFile") || confess "Error: Unable to open weka log file $tmpWorkflowOutFile: $!\n";
+        my @splitLine;
+        #my $goTerm;
+        my $id="";
+        my $className="";
+        my $prob;
+
+	    while (my $line = <WFLOWOUT>)
+	    {
+            if($line !~ /^#/o)
+		    {
+                my ($id,$className,$prob)=split("\t",$line);
+                
+				    if($className =~ m/secret/o){
+			            $className="secreted";
+#                       $goTerm="extracellular region GO:0005576;"
+				    } elsif($className =~ m/cellmem/o){
+				        $className="plasma membrane";
+#                       $goTerm="plasma membrane GO:0005886; integral to membrane GO:0016021;";
+				    } elsif($className =~ m/inner_me/o){
+				        $className="inner membrane";
+#                       $goTerm="plasma membrane GO:0005886; integral to membrane GO:0016021;";
+				    } elsif($className =~ m/outer_me/o){
+				        $className="outer membrane";
+#                       $goTerm="cell outer membrane GO:0009279; integral to membrane GO:0016021;";
+				    } elsif($className =~ m/memnucl/o){
+				        $className="nucleus membrane";
+#                       $goTerm="nuclear membrane GO:0031965; integral to membrane GO:0016021;";
+				    } elsif($className =~ m/nucleus/o){
+				        $className="nucleus";
+#                       $goTerm="nucleus GO:0005634";
+				    } elsif($className =~ m/cytopla/o){
+				        $className="cytosol";
+#                       $goTerm="cytoplasm GO:0005737"; 
+				    } elsif($className =~ m/memmito/o){
+				        $className="mitochondria membrane";
+#                       $goTerm="mitochondrial inner membrane GO:0005743; integral to membrane GO:0016021;";           
+				    } elsif($className =~ m/mitochon/o){
+				        $className="mitochondria";
+#                       $goTerm="mitochondrion GO:0005739;";
+				    } elsif($className =~ m/memchlo/o){
+				        $className="chloroplast membrane";
+#                       $goTerm="chloroplast thylakoid membrane GO:0009535; integral to membrane GO:0016021;";
+				    } elsif($className =~ m/chloropl/o){
+				        $className="chloroplast";
+#                       $goTerm="chloroplast GO:0009507;";
+				    } elsif($className =~ m/memgolgi/o){
+				        $className="golgi apparatus membrane";
+#                       $goTerm="Golgi membrane GO:0000139; integral to membrane GO:0016021;";
+				    } elsif($className =~ m/golgi/o){
+				        $className="golgi apparatus";
+#                       $goTerm="Golgi apparatus GO:0005794;";
+				    } elsif($className =~ m/memperox/o){
+				        $className="peroxisome membrane";
+#                       $goTerm="peroxisomal membrane GO:0005778; integral to membrane GO:0016021;";
+				    } elsif($className =~ m/perox/o){
+				        $className="peroxisome";
+#                       $goTerm="peroxisome GO:0005777;";
+				    } elsif($className eq "memer"){
+				        $className="endoplasmic reticulum membrane";
+#                       $goTerm="endoplasmic reticulum membrane GO:0005789; integral to membrane GO:0016021;";
+				    } elsif($className eq "er"){
+				        $className="endoplasmic reticulum";
+#                       $goTerm="endoplasmic reticulum GO:0005783;";
+				    } elsif($className =~ m/memvacu/){
+				        $className="vacuole membrane";
+#                       $goTerm="vacuolar membrane GO:0005774; integral to membrane GO:0016021;";
+				    } elsif($className =~ m/vacuol/){
+				        $className="vacuole";
+#                       $goTerm="vacuole GO:0005773;";
+				    } elsif($className =~ m/plastid/){
+				        $className="plastid";
+#                       $goTerm="plastid GO:0009536;";
+				    } elsif($className =~ m/fimbrium/){
+				        $className="fimbrium";
+#                       $goTerm="pilus GO:0009289;";
+				    } elsif($className =~ m/peripl/){
+				        $className="periplasm";
+#                       $goTerm="periplasmic space GO:0042597;";
+				    } else {
+				        confess ("\nError: Unknown localization $className in $tmpWorkflowOutFile. Please contact the developers at localization\@rostlab.org\n");
+				    }
+				    my $relIndex = ((100*$prob)-20)*10/8;
+				    my $roundedRI = int($relIndex + 0.5);
+                    print TMPLC3 $id . "\t" . $className . "\t" . $roundedRI . "\n";
+		    }	
+	    }
+	    close(WFLOWOUT);
+    }        
+	close(TMPLC3);
+}	
+#	move($predOutputFile,$outputFilePath) || confess "\nError: Copy failed: $!: $predOutputFile => $outputFilePath\n";
+
+__END__
+
+=pod
+
+=head1 NAME
+
+loctree2 - protein sub-cellular localization prediction for all domains of life
+
+=head1 SYNOPSIS
+
+loctree2 [OPTION]
+
+=head1 DESCRIPTION
+
+LocTree2 is a method to predict the sub-cellular localization of transmembrane and water-soluble globular proteins in all domains of life.
+
+LocTree2 combines three different systems of classification trees to predict 3 localization classes in Archaea, 6 classes in Bacteria, and 18 classes in Eukaryota.
+
+Amongst the novel aspects of LocTree2 are: 
+
+=over
+
+ * incorporation of no other information than evolutionary profiles 
+ * very accurate in distinction: membrane/water-soluble globular proteins 
+ * high robustness against sequencing errors 
+ * top performance even for protein fragments
+ * high prediction speed
+
+=back
+
+Large - about 3.5G in total - data files necessary for the operation of loctree2 are downloaded automatically on the first use of the program.  The download is restartable.
+You can also make an explicit call to F<E<lt>basedirE<gt>/loctree2data> (by default F<__pkgdatadir__/loctree2data>) to download the data files.  In case the data directory (by default F<__datadir__/loctree2-data>) is not writable and you are not root, the operation is reattempted with sudo(8).
+
+=head2 Input files
+
+LocTree2 requires two files for a protein sequence to be predicted:
+
+ 1. fasta file [.fasta|.fa|.f]
+ 2. evolutionary profile file [.profile|.blast|.psiBlast|.blastPsiMat]
+
+We create evolutionary profiles by running PSI-BLAST against an 80% non-redundant database combining SWISS-PROT, TrEMBL (http://www.uniprot.org/) and PDB (http://www.pdb.org) using the command:
+
+blastpgp -F F -a 1 -j 3 -b 3000 -e 1 -h 1e-3 -d /path_to_big80_database/big_80 -i /path/example.fasta -o /path/example.profileTmp -Q /path/example.profile
+
+For the contents of the profile files please have a look at examples.
+
+=head2 Output format
+
+Protein Id  Localization    Score
+
+<protein_id>    <localization_class>    [0-100]
+
+See example outputs in F<__docdir__/examples>
+
+=head1 REFERENCES
+
+Goldberg, T., Hamp, T., and Rost, B. (2012). LocTree2 predicts localization for all domains of life. Bioinformatics 2012 28: i458-i456
+
+=head1 OPTIONS
+
+=head2 Mandatory
+
+=over
+
+=item -i, --indir
+
+Input directory with one fasta and one evolutionary profile file for each sequence to be predicted. A fasta file must contain exactly ONE protein sequence. Corresponding fasta and profile files must have the same prefix (i.e. if there is a file "example.fasta", there must also be a file "example.profile). Or use --fasta and --blastmat.
+
+=item -f, --fasta
+
+File containing exactly one fasta input sequence. This parameter must be used in combination with B<--blastmat>.
+
+=item -b, --blastmat
+
+File containing exactly one evolutionary profile matrix in a format like that of blastpgp(1) B<-Q> ('Output File for PSI-BLAST Matrix in ASCII') option. This parameter must be used in combination with B<--fasta>.
+
+=item -r, --resfile
+    
+Output result file. Note, protein name provided in the fasta header will be truncated at the first whitespace character for output.
+
+=item -d, --domain
+     
+The domain of the organism of the protein sequences to be predicted
+ Options:
+ 'arch' for Archaea
+ 'bact' for Bacteria
+ 'euka' for Eukaryota
+
+=back
+
+=head2 Optional
+
+=over
+
+=item -p, --printdebug
+     
+Print debugging messages
+
+=item -q, --quiet
+
+Silence progress messages
+
+=item -t, --tmpdir
+           
+Working directory. Intermediate files will be saved here. If not given, a temporary directory is used. The temporary directory is automatically removed at the end of a run when debugging is off
+
+=back
+
+=head1 EXAMPLES
+
+C<loctree2 --in __docdir__/examples/arch/ --resfile ./arch_output.lc2 --domain arch>
+
+C<loctree2 -i __docdir__/examples/bact/ -r ./bact_output.lc2 -d bact>
+
+C<loctree2 -i __docdir__/examples/euka/ -r ./euka_output.lc2 -d euka -n 2>
+
+or 
+
+C<loctree2 --fasta __docdir__/examples/arch/arch_example.fa --blastmat __docdir__/examples/arch/arch_example.profile --resfile ./arch_output.lc2 --domain arch>
+
+C<loctree2 -f __docdir__/examples/arch/arch_example.fa -b __docdir__/examples/arch/arch_example.profile -r ./arch_output.lc2 -d arch>
+
+=head1 BUGS
+
+Please report bugs at localization@rostlab.org
+
+=head1 ENVIRONMENT
+
+=over
+
+=item LOCTREE2CONF
+
+Location of loctree2rc configuration file to use, overriding other configuration files
+
+=back
+
+=head1 FILES
+
+=over
+
+=item F<__pkgdatadir__/loctree2rc.default>
+
+Default configuration file. See this file for a description of the parameters
+
+=item F</etc/loctree2rc>
+
+System configuration file overriding values in F<__pkgdatadir__/loctree2rc.default>
+
+=item F<~/.loctree2rc>
+
+User configuration file overriding values in F</etc/loctree2rc>
+
+=item F<$LOCTREE2CONF>
+
+If this environment variable is set F<~/.loctree2rc> is disregarded and the value of the variable is read for configuration options overriding F</etc/loctree2rc>
+
+=back
+
+=head1 AUTHOR
+
+Tatyana Goldberg, Tobias Hamp, Burkhard Rost
+
+=head1 COPYRIGHT AND LICENSE
+
+(C) Copyright 2012, Tatyana Goldberg, Technical University of Munich, Germany
+
+This program is licensed under the GNU GENERAL PUBLIC LICENSE.
+
+=head1 SEE ALSO
+
+blastpgp(1)
+
+=cut
+
+# vim:ai:ts=4:et:
