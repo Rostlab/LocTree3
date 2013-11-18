@@ -430,8 +430,8 @@ reg_blast_1:
     }
     if($bestHit ne "")
     {
-        #$maxSeqId = ($maxSeqId - 20)*10/8;   #normalization
-        #$maxSeqId = sprintf("%.0f",$maxSeqId);
+        $maxSeqId = ($maxSeqId - 20)*10/8;   #normalization
+        $maxSeqId = sprintf("%.0f",$maxSeqId);
         if($seqId<0){$seqId = 0;}
         my @splitHits = split(/#/,$bestHit);
         $result = "$query\t$maxSeqId\t$splitHits[1]\t$splitHits[2]";
