@@ -17,7 +17,7 @@ clean-local:
 	rm -f $(man_MANS)
 
 install-data-hook:
-	sed -i -e 's|__pkglibdir__|$(pkglibdir)|g;s|__datadir__|$(datadir)|g;s|__docdir__|$(docdir)|g;s|__pkgdatadir__|$(pkgdatadir)|g;s|__PREFIX__|$(prefix)|g;s|__sysconfdir__|$(sysconfdir)|g;s|__bindir__|$(bindir)|g;s|__VERSION__|$(VERSION)|g;' "$(DESTDIR)$(pkgdatadir)/loctree2rc.default" "$(DESTDIR)$(pkgdatadir)/loctree2data"
+	sed -i -e 's|__pkglibdir__|$(pkglibdir)|g;s|__datadir__|$(datadir)|g;s|__docdir__|$(docdir)|g;s|__pkgdatadir__|$(pkgdatadir)|g;s|__PREFIX__|$(prefix)|g;s|__sysconfdir__|$(sysconfdir)|g;s|__bindir__|$(bindir)|g;s|__VERSION__|$(VERSION)|g;' "$(DESTDIR)$(pkgdatadir)/loctree3rc.default" "$(DESTDIR)$(pkgdatadir)/loctree2data"
 
 install-exec-hook:
-	sed -i -e 's|__pkglibdir__|$(pkglibdir)|g;s|__datadir__|$(datadir)|g;s|__docdir__|$(docdir)|g;s|__pkgdatadir__|$(pkgdatadir)|g;s|__PREFIX__|$(prefix)|g;s|__sysconfdir__|$(sysconfdir)|g;s|__bindir__|$(bindir)|g;s|__VERSION__|$(VERSION)|g;' "$(DESTDIR)$(bindir)/loctree2"
+	sed -i -e 's|__pkglibdir__|$(pkglibdir)|g;s|__datadir__|$(datadir)|g;s|__docdir__|$(docdir)|g;s|__pkgdatadir__|$(pkgdatadir)|g;s|__PREFIX__|$(prefix)|g;s|__sysconfdir__|$(sysconfdir)|g;s|__bindir__|$(bindir)|g;s|__VERSION__|$(VERSION)|g;' "$(DESTDIR)$(bindir)/loctree3"

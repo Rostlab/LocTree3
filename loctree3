@@ -43,7 +43,7 @@ my $args_ok=GetOptions( 'indir=s'          =>  \$inputDirPath,
                         'fasta=s'       => \$fastaFile,
                         'blastmat=s'      => \$blastMat,
                         'noBlast+'     =>  \$noBlast,
-                        'localDB=s'     =>  \$localDB,
+                        'localdb=s'     =>  \$localDB,
                         'additional=s'  =>  \$lc2svnOutPath,
                         'printdebug+'   => \$debug,
                         'quiet+'        => \$quiet
@@ -68,7 +68,7 @@ sub die_usage{
 	say "\nOPTIONS:";
    # say "\n-n, --nrfiles\n\tNumber of protein sequences processed per run. If the number of fasta files in <input directory> exceeds this threshold then the output for the next nrfiles sequences will be written to <output_file>_2. This will be repeated until all sequences in <input directory> are read in";
     say "\n-l, --localdb\n\tUse your own local database for PSI-BLAST to search against";
-    say "\n-n, --nopsiblast\n\tTurn off Psi-Blast and run LocTree2 for predictions only";
+    say "\n-n, --nopsiblast\n\tTurn off PSI-BLAST and run LocTree2 for predictions only";
     say "\n-a, --lc2add\n\tPrint additional file for LocTree2 predictions containing all SVN outputs";
     say "\n-p, --printdebug\n\tPrint debugging messages";
     say "\n-q, --quiet\n\tSilence progress messages";
@@ -245,7 +245,7 @@ foreach my $fastaFileName (@files)
                 $tmpPsiBlastOutFile = File::Spec->catfile($tmpDirPath, $fastaCounter.".blastPsiOutTmp");
                 $psiBlastCommand = "blastpgp -F F -a 1 -j 3 -b 50 -e 1e-3 -h 1e-10 -d $modelDB -i $fasta -o $tmpPsiBlastOutFile";
                 if( $debug ) { warn( "Executing PSI-BLAST command:\n$psiBlastCommand\n" ); }
-                system($psiBlastCommand) && confess "\nError running Psi-Blast command: $!\n";
+                system($psiBlastCommand) && confess "\nError running PSI-BLAST command: $!\n";
                 $psiBlastResult = readPsiBlastResult($tmpPsiBlastOutFile, $seqId);
             }
             #psi-blst annotation was successful
@@ -366,7 +366,7 @@ sub readPsiBlastResult{
     my $seqId="";
     my $random_number=0;
 
-    open(PSIBLASTTMPLC3, "<$resultFile") || confess ("\nError: Unable to open Psi-Blast predictions file $resultFile: $!\n");
+    open(PSIBLASTTMPLC3, "<$resultFile") || confess ("\nError: Unable to open PSI-BLAST predictions file $resultFile: $!\n");
     while (my $line = <PSIBLASTTMPLC3>)
     {
         if ($line =~ /Results from round 3/ || $line =~ /CONVERGED!/ || $line =~ / No hits found /)
@@ -426,7 +426,7 @@ reg_blast_1:
     close(PSIBLASTTMPLC3);
     
     if($isConverged == 0) {
-        confess("\nPsi-Blast result for input file $fasta contains no 'converged' or 'result not find' statement. This an error. Program will exit.\n\n");
+        confess("\nPSI-BLAST result for input file $fasta contains no 'converged' or 'result not find' statement. This an error. Program will exit.\n\n");
     }
     if($bestHit ne "")
     {
@@ -602,11 +602,10 @@ loctree3 [OPTION]
 
 LocTree3 is a method to predict the sub-cellular localization of transmembrane and water-soluble globular proteins in all domains of life. 
 
-LocTree3 is a combination of a homology and de-nove based prediction, using PSI-BLAST and LocTree2. The method predicts three localization classes in Archaea, six in Bacteria, and 18 in Eukaryota.
+LocTree3 is a combination of a homology and de-novo - based prediction, using PSI-BLAST and LocTree2. The method predicts three localization classes in Archaea, six in Bacteria, and 18 in Eukaryota.
 
-=back
 
-Large - about 3.5G in total - data files necessary for the operation of loctree2 are downloaded automatically on the first use of the program.  The download is restartable.
+Large - about 3.5G in total - data files necessary for the operation of LocTree2 are downloaded automatically on the first use of the program.  The download is restartable.
 You can also make an explicit call to F<E<lt>basedirE<gt>/loctree2data> (by default F<__pkgdatadir__/loctree2data>) to download the data files.  In case the data directory (by default F<__datadir__/loctree2-data>) is not writable and you are not root, the operation is reattempted with sudo(8).
 
 =head2 Input files
@@ -624,13 +623,23 @@ For the contents of the profile files please have a look at examples.
 
 =head2 Output format
 
-Tab sepoarated:
-Protein Id - sequence identifier as provided in the fasta file, truncated by whitespace
-Score - Prediction reliability score, from 0=unreliable to 100=most reliable
-Localization - Predicted sub-cellular localization class
-Gene Ontology Terms - Gene Ontology terms of the corresponding localization
+Tab separated:
+
+=over
+
+ Protein Id - sequence identifier as provided in the fasta file, truncated by whitespace
+ Score - Prediction reliability score, from 0=unreliable to 100=most reliable
+ Localization - Predicted sub-cellular localization class
+ Gene Ontology Terms - Gene Ontology terms of the corresponding localization
+
+=back
 
 See example outputs in F<__docdir__/examples>
+
+=head2 Novel aspects
+    
+ * Incorporation of annotation by sequence homology (PSI-BLAST searches)
+ * Printable SVN probability scores along the prediction path of a LocTree2 tree
 
 =head1 REFERENCES
 
@@ -682,6 +691,19 @@ Silence progress messages
            
 Working directory. Intermediate files will be saved here. If not given, a temporary directory is used. The temporary directory is automatically removed at the end of a run when debugging is off
 
+=item -l, --localdb
+
+Use your own local database for PSI-BLAST to search against
+
+=item -n, --nopsiblast
+
+Turn off PSI-BLAST and run LocTree2 predictions only
+
+=item -a, --lc2add
+
+Print additional file for LocTree2 predictions containing all SVN outputs
+
+
 =back
 
 =head1 EXAMPLES
@@ -694,9 +716,9 @@ C<loctree3 -i __docdir__/examples/euka/ -r ./euka_output.lc2 -d euka>
 
 or 
 
-C<loctree3 --fasta __docdir__/examples/arch/arch_example.fa --blastmat __docdir__/examples/arch/arch_example.profile --resfile ./arch_output.lc2 --domain arch>
+C<loctree3 --fasta __docdir__/examples/arch/arch_example.fa --blastmat __docdir__/examples/arch/arch_example.profile --resfile ./arch_output.lc2 --nopsiblast --domain arch>
 
-C<loctree3 -f __docdir__/examples/arch/arch_example.fa -b __docdir__/examples/arch/arch_example.profile -r ./arch_output.lc2 -d arch>
+C<loctree3 -f __docdir__/examples/arch/arch_example.fa -b __docdir__/examples/arch/arch_example.profile -r ./arch_output.lc2 -a ./arch_output.lc2.svn -d arch>
 
 =head1 BUGS
 
