@@ -1,0 +1,10 @@
+[loctree3]
+
+# path to loctree3 installation e.g. /usr/share/loctree3 or ~/share/loctree3
+basedir=/usr/share/loctree3
+
+# path to loctree3 data files, i.e. underlying psi-blast databases
+datadir=/usr/share/loctree3/data
+
+# path to loctree2 data files, e.g. /usr/share/loctree2-data
+lc2datadir=/usr/share/loctree2-data

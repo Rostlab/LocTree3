@@ -1,0 +1,103 @@
+Files: bin/string-kernel-fast-cleaned
+Copyright:
+ Modifications: 2012 Tobias Hamp <hampt@rostlab.org>, Technical University of Munich, Germany
+ Original source: Eleazar Eskin and Rui Kuang and Ke Wang and Tze Way Eugene Ie
+  Downloaded from: http://cbio.mskcc.org/leslielab/files/software/string-kernels/string-kernels-distribution.tar.zip
+License:
+ -----
+ Modifications by Tobias Hamp:
+ Limited reuse of this binary is allowed. For licensing details please email Tobias Hamp <hampt@rostlab.org>.
+ -----
+ String Kernels Package License
+ .
+ Eleazar Eskin
+ eeskin-at-cs.columbia.edu 
+    * Original spectrum/mismatch kernel code
+ .
+ Rui Kuang and Ke Wang
+ rkuang-at-cs.columbia.edu
+ kewang-at-cs.columbia.edu
+    * Implementation of profile kernel code
+ .
+ Tze Way Eugene Ie
+ eie-at-cs.columbia.edu
+    * Automation setup for running experiments using kernel code
+    * Motif extraction code
+ .
+ Feel free to use the package in your academic research. If you use it, please
+ cite the following papers:
+ .
+ Spectrum and Mismatch Kernels
+ =============================
+ Christina Leslie, Eleazar Eskin and William Stafford Noble,
+ "The Spectrum Kernel: A String Kernel for SVM Protein Classification".
+ In Proceedings of the Pacific Symposium on Biocomputing (PSB 2002). 
+ Kaua'i, Hawaii: January 2-7, 2002.
+ .
+ Christina Leslie, Eleazar Eskin, Adiel Cohen, Jason Weston and William
+ Stafford Noble, "Mismatch String Kernels for Discriminative Protein 
+ Classification". Bioinformatics, 20:4, pp. 467-476, 2004.
+ .
+ Christina Leslie, Eleazar Eskin, Jason Weston and William 
+ Stafford Noble, "Mismatch String Kernels for SVM Protein 
+ Classification". Neural Information Processing Systems 2002 (NIPS 2002).
+ Vancouver, December 9-14, 2002.
+ .
+ Profile Kernel
+ ==============
+ Rui Kuang, Eugene Ie, Ke Wang, Kai Wang, Mahira Siddiqi,
+ Yoav Freund and Christina Leslie, "Profile-based String Kernels for 
+ Remote Homology Eetection and Motif Extraction". Accepted, Computational
+ Systems Bioinformatics 2004 (CSB 2004), Stanford, CA, August 16-19, 2004.
+ ----
+ Permission to use, copy, modify, and distribute any part of     
+ this software for educational, research and non-profit purposes,
+ without fee, and without a written agreement is hereby granted, 
+ provided that the above copyright notice, this paragraph and    
+ the following three paragraphs appear in all copies.            
+ .
+ Those desiring to incorporate this software into commercial products
+ or use for commercial purposes should contact 
+ .
+   Science and Technology Ventures
+   500 West 120th Street
+   Engineering Terrace, Suite363
+   New York, NY 10027
+   Tel: 212-854-8444
+   Fax: 212-854-8463
+   e-mail: stvinfo@columbia.edu
+ .
+ IN NO EVENT SHALL COLUMBIA UNIVERSITY BE LIABLE TO ANY PARTY FOR
+ DIRECT, INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES,
+ INCLUDING LOST PROFITS, ARISING OUT OF THE USE OF THIS SOFTWARE, EVEN
+ IF THE COLUMBIA UNIVERSITY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+ DAMAGE.
+ .
+ THE SOFTWARE PROVIDED HEREUNDER IS ON AN "AS IS" BASIS, AND COLUMBIA
+ UNIVERSITY HAS NO OBLIGATIONS TO PROVIDE MAINTENANCE, SUPPORT,
+ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.  THE UNIVERSITY OF CALIFORNIA
+ MAKES NO REPRESENTATIONS AND EXTENDS NO WARRANTIES OF ANY KIND, EITHER
+ EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE, OR
+ THAT THE USE OF THE MATERIAL WILL NOT INFRINGE ANY PATENT, TRADEMARK
+ OR OTHER RIGHTS.
+ -----
+
+This work was packaged for Debian by:
+
+    Tatyana Goldberg <goldberg@rostlab.org> on Fri, 28 Sep 2012 19:44:40 +0200
+
+Copyright:
+
+    Copyright (C) 2012 Tatyana Goldberg, Technical University of Munich, Germany
+
+License:
+
+    GPL-3+ - TODO
+
+The Debian packaging is:
+
+    Copyright (C) 2012 Tatyana Goldberg <goldberg@rostlab.org>
+
+and is licensed under the GPL version 3,
+see "/usr/share/common-licenses/GPL-3".

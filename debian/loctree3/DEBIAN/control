@@ -1,0 +1,18 @@
+Package: loctree3
+Version: 1.0.0
+Architecture: amd64
+Maintainer: Tatyana Goldberg <goldberg@rostlab.org>
+Installed-Size: 42550
+Depends: wget, blastpgp, fastprofkernel
+Section: non-free/science
+Priority: extra
+Homepage: http://rostlab.org/
+Description: sub-cellular localization predictor for all proteins in all domains of life
+ LocTree3 is a combination of a homology-based (PSI-BLAST) and de-novo predictions
+ (LocTree2) for the prediction of protein sub-cellular localization in life's three
+ domains, including globular and membrane proteins (3 classes for archaea; 6 for
+ bacteria and 18 for eukaryota).
+ .
+ This package does not contain the data files of loctree2. These are
+ downloaded on the first usage by the script
+ /usr/share/loctree2/loctree2data.

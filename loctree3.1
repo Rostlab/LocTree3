@@ -141,7 +141,7 @@ LocTree3 is a method to predict the sub-cellular localization of transmembrane a
 LocTree3 is a combination of a homology and de-novo \- based prediction, using PSI-BLAST and LocTree2. The method predicts three localization classes in Archaea, six in Bacteria, and 18 in Eukaryota.
 .PP
 Large \- about 3.5G in total \- data files necessary for the operation of LocTree2 are downloaded automatically on the first use of the program.  The download is restartable.
-You can also make an explicit call to \fI<basedir>/loctree2data\fR (by default \fI/tmp/loctree2107/share/loctree3/loctree2data\fR) to download the data files.  In case the data directory (by default \fI/tmp/loctree2107/share/loctree2\-data\fR) is not writable and you are not root, the operation is reattempted with \fIsudo\fR\|(8).
+You can also make an explicit call to \fI<basedir>/loctree2data\fR (by default \fI/usr/share/loctree3/loctree2data\fR) to download the data files.  In case the data directory (by default \fI/usr/share/loctree2\-data\fR) is not writable and you are not root, the operation is reattempted with \fIsudo\fR\|(8).
 .SS "Input files"
 .IX Subsection "Input files"
 LocTree3 requires two files for a protein sequence to be predicted:
@@ -167,7 +167,7 @@ Tab separated:
 \& Gene Ontology Terms \- Gene Ontology terms of the corresponding localization
 .Ve
 .PP
-See example outputs in \fI/tmp/loctree2107/share/doc/loctree3/examples\fR
+See example outputs in \fI/usr/share/doc/loctree3/examples\fR
 .SS "Novel aspects"
 .IX Subsection "Novel aspects"
 .Vb 2
@@ -221,17 +221,17 @@ Turn off PSI-BLAST and run LocTree2 predictions only
 Print additional file for LocTree2 predictions containing all \s-1SVN\s0 outputs
 .SH "EXAMPLES"
 .IX Header "EXAMPLES"
-\&\f(CW\*(C`loctree3 \-\-in /tmp/loctree2107/share/doc/loctree3/examples/arch/ \-\-resfile ./arch_output.lc2 \-\-domain arch\*(C'\fR
+\&\f(CW\*(C`loctree3 \-\-in /usr/share/doc/loctree3/examples/arch/ \-\-resfile ./arch_output.lc2 \-\-domain arch\*(C'\fR
 .PP
-\&\f(CW\*(C`loctree3 \-i /tmp/loctree2107/share/doc/loctree3/examples/bact/ \-r ./bact_output.lc2 \-d bact\*(C'\fR
+\&\f(CW\*(C`loctree3 \-i /usr/share/doc/loctree3/examples/bact/ \-r ./bact_output.lc2 \-d bact\*(C'\fR
 .PP
-\&\f(CW\*(C`loctree3 \-i /tmp/loctree2107/share/doc/loctree3/examples/euka/ \-r ./euka_output.lc2 \-d euka\*(C'\fR
+\&\f(CW\*(C`loctree3 \-i /usr/share/doc/loctree3/examples/euka/ \-r ./euka_output.lc2 \-d euka\*(C'\fR
 .PP
 or
 .PP
-\&\f(CW\*(C`loctree3 \-\-fasta /tmp/loctree2107/share/doc/loctree3/examples/arch/arch_example.fa \-\-blastmat /tmp/loctree2107/share/doc/loctree3/examples/arch/arch_example.profile \-\-resfile ./arch_output.lc2 \-\-nopsiblast \-\-domain arch\*(C'\fR
+\&\f(CW\*(C`loctree3 \-\-fasta /usr/share/doc/loctree3/examples/arch/arch_example.fa \-\-blastmat /usr/share/doc/loctree3/examples/arch/arch_example.profile \-\-resfile ./arch_output.lc2 \-\-nopsiblast \-\-domain arch\*(C'\fR
 .PP
-\&\f(CW\*(C`loctree3 \-f /tmp/loctree2107/share/doc/loctree3/examples/arch/arch_example.fa \-b /tmp/loctree2107/share/doc/loctree3/examples/arch/arch_example.profile \-r ./arch_output.lc2 \-a ./arch_output.lc2.svn \-d arch\*(C'\fR
+\&\f(CW\*(C`loctree3 \-f /usr/share/doc/loctree3/examples/arch/arch_example.fa \-b /usr/share/doc/loctree3/examples/arch/arch_example.profile \-r ./arch_output.lc2 \-a ./arch_output.lc2.svn \-d arch\*(C'\fR
 .SH "BUGS"
 .IX Header "BUGS"
 Please report bugs at localization@rostlab.org
@@ -242,12 +242,12 @@ Please report bugs at localization@rostlab.org
 Location of loctree3rc configuration file to use, overriding other configuration files
 .SH "FILES"
 .IX Header "FILES"
-.IP "\fI/tmp/loctree2107/share/loctree3/loctree3rc.default\fR" 4
-.IX Item "/tmp/loctree2107/share/loctree3/loctree3rc.default"
+.IP "\fI/usr/share/loctree3/loctree3rc.default\fR" 4
+.IX Item "/usr/share/loctree3/loctree3rc.default"
 Default configuration file. See this file for a description of the parameters
 .IP "\fI/etc/loctree3rc\fR" 4
 .IX Item "/etc/loctree3rc"
-System configuration file overriding values in \fI/tmp/loctree2107/share/loctree3/loctree3rc.default\fR
+System configuration file overriding values in \fI/usr/share/loctree3/loctree3rc.default\fR
 .IP "\fI~/.loctree3rc\fR" 4
 .IX Item "~/.loctree3rc"
 User configuration file overriding values in \fI/etc/loctree3rc\fR

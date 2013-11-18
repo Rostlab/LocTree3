@@ -1,0 +1,5 @@
+How to obtain sequence profiles required to run LocTree2
+
+1: Download the 80% non-redundant blast database (big_80*) combining SWISS-PROT, TrEMBL and PDB from https://rostlab.org/rost-db-data/big/
+2: For each file containing exactly one fasta sequence run PsiBlast using, for example, the following command:
+/usr/bin/blastpgp -F F -a 1 -j 3 -b 3000 -e 1 -h 1e-3 -d /path_to_big80_database/big_80 -i /path/example.fasta -o /path/525258.3_CD3095.profileTmp -Q /path/example.profile
