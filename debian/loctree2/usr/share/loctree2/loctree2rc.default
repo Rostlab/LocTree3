@@ -1,9 +1,0 @@
-[loctree2]
-# path to loctree2 installation e.g. /usr/share/loctree2 or ~/share/loctree2
-basedir=/usr/share/loctree2
-
-# path to loctree2 data files, e.g. /usr/share/loctree2-data
-datadir=/usr/share/loctree2-data
-
-#path to loctree2 executable helper files
-libdir=/usr/lib/loctree2

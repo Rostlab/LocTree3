@@ -17,7 +17,7 @@ use Getopt::Long;
 # SYSTEM CONFIGURATION RETRIEVAL
 our $config;
 BEGIN {
-    our $VERSION = "1.0.0";
+    our $VERSION = "1.0.1";
     delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
     my ( $defaultconfig, $etcconfig );
     if( -e "/usr/share/loctree3/loctree3rc.default" ) { $defaultconfig = Config::IniFiles->new( -file => "/usr/share/loctree3/loctree3rc.default" ); }
@@ -31,7 +31,7 @@ if( system('pp_popcon_cnt', '-p', 'loctree3') == -1 ){ warn("The Rost Lab recomm
 ###########################################
 ############# process input ###############
 
-my($inputDirPath,$outputFilePathRef,$domain,$tmpDirPath,$fastaFile,$blastMat,$localDB,$lc2svnOutPath);
+my($inputDirPath,$outputFilePathRef,$domain,$tmpDirPath,$fastaFile,$blastMat,$localDB,$addSVNOutPath);
 my $debug=0;
 my $quiet=0;
 my $noBlast=0;
@@ -42,9 +42,9 @@ my $args_ok=GetOptions( 'indir=s'          =>  \$inputDirPath,
                         'tmpdir=s'      =>  \$tmpDirPath,
                         'fasta=s'       => \$fastaFile,
                         'blastmat=s'      => \$blastMat,
-                        'noBlast+'     =>  \$noBlast,
+                        'nopsiblast+'     =>  \$noBlast,
                         'localdb=s'     =>  \$localDB,
-                        'additional=s'  =>  \$lc2svnOutPath,
+                        'addsvn=s'  =>  \$addSVNOutPath,
                         'printdebug+'   => \$debug,
                         'quiet+'        => \$quiet
 );
@@ -69,7 +69,7 @@ sub die_usage{
    # say "\n-n, --nrfiles\n\tNumber of protein sequences processed per run. If the number of fasta files in <input directory> exceeds this threshold then the output for the next nrfiles sequences will be written to <output_file>_2. This will be repeated until all sequences in <input directory> are read in";
     say "\n-l, --localdb\n\tUse your own local database for PSI-BLAST to search against";
     say "\n-n, --nopsiblast\n\tTurn off PSI-BLAST and run LocTree2 for predictions only";
-    say "\n-a, --lc2add\n\tPrint additional file for LocTree2 predictions containing all SVN outputs";
+    say "\n-a, --addsvn\n\tPrint additional file for LocTree2 predictions containing all SVN outputs";
     say "\n-p, --printdebug\n\tPrint debugging messages";
     say "\n-q, --quiet\n\tSilence progress messages";
     say "\n-t, --tmpdir <directory>\n\tWorking directory. Intermediate files will be saved here. If not given, a temporary directory is used. The temporary directory is automatically removed at the end of a run when debugging is off";
@@ -341,7 +341,7 @@ if($fastaCounter==0){
 
 #make predictions with loctree2 
 if($profileFileName ne ""){
-    runLocTree2($profileCounter,$tmpDirPath,$combinedFastaFile,$combinedProfileFile,$outputFilePath,$errorSeq,$lc2svnOutPath);
+    runLocTree2($profileCounter,$tmpDirPath,$combinedFastaFile,$combinedProfileFile,$outputFilePath,$errorSeq,$addSVNOutPath);
 }else{
     close (TMPRESULTSFILE);
     move($tmpResulstFile,$outputFilePath) || confess "\nError: Copy failed: $!: $tmpResulstFile => $outputFilePath\n";
@@ -450,16 +450,16 @@ sub runLocTree2{
 	my $combinedProfileFile=shift;
 	my $outputFilePath=shift;
 	my $errorSeq=shift;
-    my $lc2svnOutPath=shift;
+    my $addSVNOutPath=shift;
 
 	if( $debug ) { warn( "\nRunning LocTree2 (profkernel-workflow)." ); }
     my $lc2dataDir = glob($config->val('loctree3', 'lc2datadir'));
     my $baseDir = glob($config->val('loctree3', 'basedir'));
     my $modelPath = File::Spec->catfile($lc2dataDir, $domain."_model");
     my $tmpWorkflowOutFile = File::Spec->catfile($tmpDirPath, $domain."_workflow.txt");
-    my $tmplc2svnOutPath;
-    if( $lc2svnOutPath ){
-        $tmplc2svnOutPath  = File::Spec->catfile($tmpDirPath, $domain."_workflow.txt.debug");
+    my $tmpaddSVNOutPath;
+    if( $addSVNOutPath ){
+        $tmpaddSVNOutPath  = File::Spec->catfile($tmpDirPath, $domain."_workflow.txt.debug");
     }
 
     # lkajan: call script to handle the large package data
@@ -580,9 +580,9 @@ sub runLocTree2{
 	
 	move($tmpResulstFile,$outputFilePath) || confess "\nError: Copy failed: $!: $tmpResulstFile => $outputFilePath\n";
 
-    if($lc2svnOutPath){
-        move($tmplc2svnOutPath,$lc2svnOutPath) || confess "\nError: Copy failed: $!: $tmplc2svnOutPath => $lc2svnOutPath\n";
-        if( !$quiet ){print "\nPrinting LocTree2's SVN results to ".$lc2svnOutPath."\n";}
+    if($addSVNOutPath){
+        move($tmpaddSVNOutPath,$addSVNOutPath) || confess "\nError: Copy failed: $!: $tmpaddSVNOutPath => $addSVNOutPath\n";
+        if( !$quiet ){print "\nPrinting LocTree2's SVN results to ".$addSVNOutPath."\n";}
     }
 }
 
@@ -699,7 +699,7 @@ Use your own local database for PSI-BLAST to search against
 
 Turn off PSI-BLAST and run LocTree2 predictions only
 
-=item -a, --lc2add
+=item -a, --addsvn
 
 Print additional file for LocTree2 predictions containing all SVN outputs
 
@@ -708,17 +708,17 @@ Print additional file for LocTree2 predictions containing all SVN outputs
 
 =head1 EXAMPLES
 
-C<loctree3 --in /usr/share/doc/loctree3/examples/arch/ --resfile ./arch_output.lc2 --domain arch>
+C<loctree3 --in /usr/share/doc/loctree3/examples/arch/ --resfile ./arch_output.lc3 --domain arch>
 
-C<loctree3 -i /usr/share/doc/loctree3/examples/bact/ -r ./bact_output.lc2 -d bact>
+C<loctree3 -i /usr/share/doc/loctree3/examples/bact/ -r ./bact_output.lc3 -d bact>
 
-C<loctree3 -i /usr/share/doc/loctree3/examples/euka/ -r ./euka_output.lc2 -d euka>
+C<loctree3 -i /usr/share/doc/loctree3/examples/euka/ -r ./euka_output.lc3 -d euka>
 
 or 
 
-C<loctree3 --fasta /usr/share/doc/loctree3/examples/arch/arch_example.fa --blastmat /usr/share/doc/loctree3/examples/arch/arch_example.profile --resfile ./arch_output.lc2 --nopsiblast --domain arch>
+C<loctree3 --fasta /usr/share/doc/loctree3/examples/arch/arch_example.fa --blastmat /usr/share/doc/loctree3/examples/arch/arch_example.profile --resfile ./arch_output.lc3 --nopsiblast --domain arch>
 
-C<loctree3 -f /usr/share/doc/loctree3/examples/arch/arch_example.fa -b /usr/share/doc/loctree3/examples/arch/arch_example.profile -r ./arch_output.lc2 -a ./arch_output.lc2.svn -d arch>
+C<loctree3 -f /usr/share/doc/loctree3/examples/arch/arch_example.fa -b /usr/share/doc/loctree3/examples/arch/arch_example.profile -r ./arch_output.lc3 -a ./arch_output.lc3.svn -d arch>
 
 =head1 BUGS
 

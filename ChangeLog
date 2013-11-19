@@ -1,3 +1,9 @@
+loctree3 (1.0.1) unstable; urgency=low
+
+  * Changed blastpgp in the debian control file to blast2
+
+ -- Tatyana Goldberg <goldberg@rostlab.org>  Wed, 19 Nov 2013 18:41:40 +0200
+
 loctree3 (1.0.0) unstable; urgency=low
 
   * Initial release.

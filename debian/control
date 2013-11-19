@@ -9,7 +9,7 @@ Homepage: http://rostlab.org/
 
 Package: loctree3
 Architecture: any
-Depends: wget, blastpgp, fastprofkernel, ${shlibs:Depends}, ${misc:Depends}
+Depends: wget, blast2, fastprofkernel, ${shlibs:Depends}, ${misc:Depends}
 Description: sub-cellular localization predictor for all proteins in all domains of life
  LocTree3 is a combination of a homology-based (PSI-BLAST) and de-novo predictions
  (LocTree2) for the prediction of protein sub-cellular localization in life's three 

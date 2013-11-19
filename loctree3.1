@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "LOCTREE3 1"
-.TH LOCTREE3 1 "2013-11-18" "1.0.0" "User Commands"
+.TH LOCTREE3 1 "2013-11-19" "1.0.1" "User Commands"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -216,22 +216,22 @@ Use your own local database for PSI-BLAST to search against
 .IP "\-n, \-\-nopsiblast" 4
 .IX Item "-n, --nopsiblast"
 Turn off PSI-BLAST and run LocTree2 predictions only
-.IP "\-a, \-\-lc2add" 4
-.IX Item "-a, --lc2add"
+.IP "\-a, \-\-addsvn" 4
+.IX Item "-a, --addsvn"
 Print additional file for LocTree2 predictions containing all \s-1SVN\s0 outputs
 .SH "EXAMPLES"
 .IX Header "EXAMPLES"
-\&\f(CW\*(C`loctree3 \-\-in /usr/share/doc/loctree3/examples/arch/ \-\-resfile ./arch_output.lc2 \-\-domain arch\*(C'\fR
+\&\f(CW\*(C`loctree3 \-\-in /usr/share/doc/loctree3/examples/arch/ \-\-resfile ./arch_output.lc3 \-\-domain arch\*(C'\fR
 .PP
-\&\f(CW\*(C`loctree3 \-i /usr/share/doc/loctree3/examples/bact/ \-r ./bact_output.lc2 \-d bact\*(C'\fR
+\&\f(CW\*(C`loctree3 \-i /usr/share/doc/loctree3/examples/bact/ \-r ./bact_output.lc3 \-d bact\*(C'\fR
 .PP
-\&\f(CW\*(C`loctree3 \-i /usr/share/doc/loctree3/examples/euka/ \-r ./euka_output.lc2 \-d euka\*(C'\fR
+\&\f(CW\*(C`loctree3 \-i /usr/share/doc/loctree3/examples/euka/ \-r ./euka_output.lc3 \-d euka\*(C'\fR
 .PP
 or
 .PP
-\&\f(CW\*(C`loctree3 \-\-fasta /usr/share/doc/loctree3/examples/arch/arch_example.fa \-\-blastmat /usr/share/doc/loctree3/examples/arch/arch_example.profile \-\-resfile ./arch_output.lc2 \-\-nopsiblast \-\-domain arch\*(C'\fR
+\&\f(CW\*(C`loctree3 \-\-fasta /usr/share/doc/loctree3/examples/arch/arch_example.fa \-\-blastmat /usr/share/doc/loctree3/examples/arch/arch_example.profile \-\-resfile ./arch_output.lc3 \-\-nopsiblast \-\-domain arch\*(C'\fR
 .PP
-\&\f(CW\*(C`loctree3 \-f /usr/share/doc/loctree3/examples/arch/arch_example.fa \-b /usr/share/doc/loctree3/examples/arch/arch_example.profile \-r ./arch_output.lc2 \-a ./arch_output.lc2.svn \-d arch\*(C'\fR
+\&\f(CW\*(C`loctree3 \-f /usr/share/doc/loctree3/examples/arch/arch_example.fa \-b /usr/share/doc/loctree3/examples/arch/arch_example.profile \-r ./arch_output.lc3 \-a ./arch_output.lc3.svn \-d arch\*(C'\fR
 .SH "BUGS"
 .IX Header "BUGS"
 Please report bugs at localization@rostlab.org

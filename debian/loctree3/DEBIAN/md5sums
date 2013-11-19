@@ -1,7 +1,7 @@
-4c891340f9019d2bf12e336fdda434ce  usr/bin/loctree3
+205232a2d209a8542188e151d79a5edc  usr/bin/loctree3
 0acf731c040d39fb649e8d375f11b1bc  usr/share/doc/loctree3/AUTHORS
 b23a1c1c0006497c2397783437caeb35  usr/share/doc/loctree3/README
-071cb7f9a44f79f2b1176bdbc6b4562d  usr/share/doc/loctree3/changelog.gz
+7d6daeaa577847bc053c3ba77b58ccc6  usr/share/doc/loctree3/changelog.gz
 4d8f734314dd0add3ab9faa765fc3043  usr/share/doc/loctree3/copyright
 566b600de0fba1d9f7f4df9a8f148293  usr/share/doc/loctree3/examples/arch/arch_example.fa
 8f09b65195f754f563e61fda1c81502c  usr/share/doc/loctree3/examples/arch/arch_example.lc3
@@ -18,7 +18,7 @@ ab60ee9e8ca148d472aee87d986fe148  usr/share/doc/loctree3/examples/euka/euka_exam
 81cc400d796cec9ae92ffa654ced4475  usr/share/doc/loctree3/examples/euka/euka_example3.f
 f08ef4cf16ca6c012f813d3f738ad185  usr/share/doc/loctree3/examples/euka/euka_example3.lc3
 e1ece6a8fa6c14c314df86addb5d7721  usr/share/doc/loctree3/examples/euka/euka_example3.psiBlast
-4dff051d63a69d69f81cf4805a09dcf0  usr/share/loctree3/Makefile
+5761dbb95dab2d10e9d15869f731b65d  usr/share/loctree3/Makefile
 7132bccf23467aa539d9531a59ded5e5  usr/share/loctree3/Makefile.am
 9d8322c5d15ace163953e237ed096dec  usr/share/loctree3/Makefile.in
 9540852db4dff818b474333b3faff968  usr/share/loctree3/arch.SP13_11.DB.phr
@@ -33,6 +33,6 @@ f386f89579dc43ca51435fc3b9219a35  usr/share/loctree3/bact.SP13_11.DB.psq
 e145a902bba88679f7ddb445ff148bed  usr/share/loctree3/euka.SP13_11.DB.pin
 31321dffb7e7e41a40b6c9c06f703c88  usr/share/loctree3/euka.SP13_11.DB.psq
 31dd497b5788fb98a5639bf0800582bf  usr/share/loctree3/euka.SP13_11.fa
-a05f4601228c3689c34c256d3d64e434  usr/share/loctree3/loctree2data
+06be056d9cd9b0b63d36be767addc087  usr/share/loctree3/loctree2data
 5307a82c5ccedd84c03783895c2c67af  usr/share/loctree3/loctree3rc.default
-324c95cd83394204bc9bc8e02de1e09c  usr/share/man/man1/loctree3.1.gz
+a7190f450fe836461d05397e1d20702b  usr/share/man/man1/loctree3.1.gz
