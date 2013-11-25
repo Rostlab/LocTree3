@@ -3,7 +3,7 @@ dist_pkgdata_SCRIPTS = $(srcdir)/loctree2data
 
 docdir = $(datadir)/doc/$(PACKAGE)
 dist_doc_DATA = AUTHORS README
-dist_pkgdata_DATA = loctree3rc.default
+dist_pkgdata_DATA = loctree3rc.default 
 
 SUBDIRS = examples data
 

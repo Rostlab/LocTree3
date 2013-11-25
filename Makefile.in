@@ -237,7 +237,7 @@ top_srcdir = @top_srcdir@
 dist_bin_SCRIPTS = loctree3
 dist_pkgdata_SCRIPTS = $(srcdir)/loctree2data
 dist_doc_DATA = AUTHORS README
-dist_pkgdata_DATA = loctree3rc.default
+dist_pkgdata_DATA = loctree3rc.default 
 SUBDIRS = examples data
 man_MANS = loctree3.1
 all: all-recursive

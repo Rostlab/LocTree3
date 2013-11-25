@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "LOCTREE3 1"
-.TH LOCTREE3 1 "2013-11-19" "1.0.1" "User Commands"
+.TH LOCTREE3 1 "2013-11-25" "1.0.3" "User Commands"
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -212,7 +212,7 @@ Silence progress messages
 Working directory. Intermediate files will be saved here. If not given, a temporary directory is used. The temporary directory is automatically removed at the end of a run when debugging is off
 .IP "\-l, \-\-localdb" 4
 .IX Item "-l, --localdb"
-Use your own local database for PSI-BLAST to search against
+Use your own local database for PSI-BLAST to search against.
 .IP "\-n, \-\-nopsiblast" 4
 .IX Item "-n, --nopsiblast"
 Turn off PSI-BLAST and run LocTree2 predictions only
@@ -231,7 +231,7 @@ or
 .PP
 \&\f(CW\*(C`loctree3 \-\-fasta /usr/share/doc/loctree3/examples/arch/arch_example.fa \-\-blastmat /usr/share/doc/loctree3/examples/arch/arch_example.profile \-\-resfile ./arch_output.lc3 \-\-nopsiblast \-\-domain arch\*(C'\fR
 .PP
-\&\f(CW\*(C`loctree3 \-f /usr/share/doc/loctree3/examples/arch/arch_example.fa \-b /usr/share/doc/loctree3/examples/arch/arch_example.profile \-r ./arch_output.lc3 \-a ./arch_output.lc3.svn \-d arch\*(C'\fR
+\&\f(CW\*(C`loctree3 \-f /usr/share/doc/loctree3/examples/euka/euka_example3.f \-b /usr/share/doc/loctree3/examples/euka/euka_example3.psiBlast \-r ./euka_output.lc3 \-a ./euka_output.lc3.svm \-d euka\*(C'\fR
 .SH "BUGS"
 .IX Header "BUGS"
 Please report bugs at localization@rostlab.org

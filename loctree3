@@ -693,7 +693,7 @@ Working directory. Intermediate files will be saved here. If not given, a tempor
 
 =item -l, --localdb
 
-Use your own local database for PSI-BLAST to search against
+Use your own local database for PSI-BLAST to search against.
 
 =item -n, --nopsiblast
 
@@ -718,7 +718,7 @@ or
 
 C<loctree3 --fasta __docdir__/examples/arch/arch_example.fa --blastmat __docdir__/examples/arch/arch_example.profile --resfile ./arch_output.lc3 --nopsiblast --domain arch>
 
-C<loctree3 -f __docdir__/examples/arch/arch_example.fa -b __docdir__/examples/arch/arch_example.profile -r ./arch_output.lc3 -a ./arch_output.lc3.svn -d arch>
+C<loctree3 -f __docdir__/examples/euka/euka_example3.f -b __docdir__/examples/euka/euka_example3.psiBlast -r ./euka_output.lc3 -a ./euka_output.lc3.svm -d euka>
 
 =head1 BUGS
 

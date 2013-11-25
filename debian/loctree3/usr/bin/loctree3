@@ -17,7 +17,7 @@ use Getopt::Long;
 # SYSTEM CONFIGURATION RETRIEVAL
 our $config;
 BEGIN {
-    our $VERSION = "1.0.1";
+    our $VERSION = "1.0.3";
     delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
     my ( $defaultconfig, $etcconfig );
     if( -e "/usr/share/loctree3/loctree3rc.default" ) { $defaultconfig = Config::IniFiles->new( -file => "/usr/share/loctree3/loctree3rc.default" ); }
@@ -693,7 +693,7 @@ Working directory. Intermediate files will be saved here. If not given, a tempor
 
 =item -l, --localdb
 
-Use your own local database for PSI-BLAST to search against
+Use your own local database for PSI-BLAST to search against.
 
 =item -n, --nopsiblast
 
@@ -718,7 +718,7 @@ or
 
 C<loctree3 --fasta /usr/share/doc/loctree3/examples/arch/arch_example.fa --blastmat /usr/share/doc/loctree3/examples/arch/arch_example.profile --resfile ./arch_output.lc3 --nopsiblast --domain arch>
 
-C<loctree3 -f /usr/share/doc/loctree3/examples/arch/arch_example.fa -b /usr/share/doc/loctree3/examples/arch/arch_example.profile -r ./arch_output.lc3 -a ./arch_output.lc3.svn -d arch>
+C<loctree3 -f /usr/share/doc/loctree3/examples/euka/euka_example3.f -b /usr/share/doc/loctree3/examples/euka/euka_example3.psiBlast -r ./euka_output.lc3 -a ./euka_output.lc3.svm -d euka>
 
 =head1 BUGS
 

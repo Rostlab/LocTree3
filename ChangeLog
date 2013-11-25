@@ -1,3 +1,15 @@
+loctree3 (1.0.3) unstable; urgency=low
+
+  * Fixed minor changes in man page
+
+ -- Tatyana Goldberg <goldberg@rostlab.org>  Mon, 25 Nov 2013 18:42:40 +0200
+
+loctree3 (1.0.2) unstable; urgency=low
+
+  * Made data folder installing in the correct directory
+
+ -- Tatyana Goldberg <goldberg@rostlab.org>  Mon, 25 Nov 2013 18:41:40 +0200
+
 loctree3 (1.0.1) unstable; urgency=low
 
   * Changed blastpgp in the debian control file to blast2

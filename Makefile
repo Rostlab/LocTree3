@@ -169,7 +169,7 @@ AUTOHEADER = ${SHELL} /mnt/project/loctree3/package/trunk/missing --run autohead
 AUTOMAKE = ${SHELL} /mnt/project/loctree3/package/trunk/missing --run automake-1.11
 AWK = gawk
 CYGPATH_W = echo
-DEFS = -DPACKAGE_NAME=\"LocTree3\" -DPACKAGE_TARNAME=\"loctree3\" -DPACKAGE_VERSION=\"1.0.1\" -DPACKAGE_STRING=\"LocTree3\ 1.0.1\" -DPACKAGE_BUGREPORT=\"localization@rostlab.org\" -DPACKAGE_URL=\"\" -DPACKAGE=\"loctree3\" -DVERSION=\"1.0.1\"
+DEFS = -DPACKAGE_NAME=\"LocTree3\" -DPACKAGE_TARNAME=\"loctree3\" -DPACKAGE_VERSION=\"1.0.3\" -DPACKAGE_STRING=\"LocTree3\ 1.0.3\" -DPACKAGE_BUGREPORT=\"localization@rostlab.org\" -DPACKAGE_URL=\"\" -DPACKAGE=\"loctree3\" -DVERSION=\"1.0.3\"
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
@@ -186,15 +186,15 @@ MKDIR_P = /bin/mkdir -p
 PACKAGE = loctree3
 PACKAGE_BUGREPORT = localization@rostlab.org
 PACKAGE_NAME = LocTree3
-PACKAGE_STRING = LocTree3 1.0.1
+PACKAGE_STRING = LocTree3 1.0.3
 PACKAGE_TARNAME = loctree3
 PACKAGE_URL = 
-PACKAGE_VERSION = 1.0.1
+PACKAGE_VERSION = 1.0.3
 PATH_SEPARATOR = :
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = 
-VERSION = 1.0.1
+VERSION = 1.0.3
 abs_builddir = /mnt/project/loctree3/package/trunk
 abs_srcdir = /mnt/project/loctree3/package/trunk
 abs_top_builddir = /mnt/project/loctree3/package/trunk
@@ -237,7 +237,7 @@ top_srcdir = .
 dist_bin_SCRIPTS = loctree3
 dist_pkgdata_SCRIPTS = $(srcdir)/loctree2data
 dist_doc_DATA = AUTHORS README
-dist_pkgdata_DATA = loctree3rc.default
+dist_pkgdata_DATA = loctree3rc.default 
 SUBDIRS = examples data
 man_MANS = loctree3.1
 all: all-recursive
