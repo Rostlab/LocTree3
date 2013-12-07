@@ -519,13 +519,13 @@ sub runLocTree2{
 				        $className="nucleus";
                         $goTerm="nucleus GO:0005634";
 				    } elsif($className =~ m/cytopla/o){
-				        $className="cytosol";
+				        $className="cytoplasm";
                         $goTerm="cytoplasm GO:0005737"; 
 				    } elsif($className =~ m/memmito/o){
-				        $className="mitochondria membrane";
+				        $className="mitochondrion membrane";
                         $goTerm="mitochondrial inner membrane GO:0005743; integral to membrane GO:0016021;";           
 				    } elsif($className =~ m/mitochon/o){
-				        $className="mitochondria";
+				        $className="mitochondrion";
                         $goTerm="mitochondrion GO:0005739;";
 				    } elsif($className =~ m/memchlo/o){
 				        $className="chloroplast membrane";
