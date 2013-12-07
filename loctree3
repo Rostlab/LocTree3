@@ -384,7 +384,7 @@ reg_blast_1:
                 if($line !~ /Length =/ && $foundHitLength==0 )
                 {
                     $line=~ s/^\s+|\s+$//g;
-                    $hit = $hit . $line;
+                    $hit = $hit ." ". $line;
                 }
                 elsif ($line =~ /Length =/ && $foundHitLength==0)
                 {
