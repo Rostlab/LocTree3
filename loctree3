@@ -31,7 +31,7 @@ if( system('pp_popcon_cnt', '-p', 'loctree3') == -1 ){ warn("The Rost Lab recomm
 ###########################################
 ############# process input ###############
 
-my($inputDirPath,$outputFilePathRef,$domain,$tmpDirPath,$fastaFile,$blastMat,$localDB,$addSVNOutPath);
+my($inputDirPath,$outputFilePathRef,$domain,$tmpDirPath,$fastaFile,$blastMat,$localDB,$addSVMOutPath);
 my $debug=0;
 my $quiet=0;
 my $noBlast=0;
@@ -44,7 +44,7 @@ my $args_ok=GetOptions( 'indir=s'          =>  \$inputDirPath,
                         'blastmat=s'      => \$blastMat,
                         'nopsiblast+'     =>  \$noBlast,
                         'localdb=s'     =>  \$localDB,
-                        'addsvn=s'  =>  \$addSVNOutPath,
+                        'addsvm=s'  =>  \$addSVMOutPath,
                         'printdebug+'   => \$debug,
                         'quiet+'        => \$quiet
 );
@@ -69,7 +69,7 @@ sub die_usage{
    # say "\n-n, --nrfiles\n\tNumber of protein sequences processed per run. If the number of fasta files in <input directory> exceeds this threshold then the output for the next nrfiles sequences will be written to <output_file>_2. This will be repeated until all sequences in <input directory> are read in";
     say "\n-l, --localdb\n\tUse your own local database for PSI-BLAST to search against";
     say "\n-n, --nopsiblast\n\tTurn off PSI-BLAST and run LocTree2 for predictions only";
-    say "\n-a, --addsvn\n\tPrint additional file for LocTree2 predictions containing all SVN outputs";
+    say "\n-a, --addsvm\n\tPrint additional file for LocTree2 predictions containing all SVM outputs";
     say "\n-p, --printdebug\n\tPrint debugging messages";
     say "\n-q, --quiet\n\tSilence progress messages";
     say "\n-t, --tmpdir <directory>\n\tWorking directory. Intermediate files will be saved here. If not given, a temporary directory is used. The temporary directory is automatically removed at the end of a run when debugging is off";
@@ -341,7 +341,7 @@ if($fastaCounter==0){
 
 #make predictions with loctree2 
 if($profileFileName ne ""){
-    runLocTree2($profileCounter,$tmpDirPath,$combinedFastaFile,$combinedProfileFile,$outputFilePath,$errorSeq,$addSVNOutPath);
+    runLocTree2($profileCounter,$tmpDirPath,$combinedFastaFile,$combinedProfileFile,$outputFilePath,$errorSeq,$addSVMOutPath);
 }else{
     close (TMPRESULTSFILE);
     move($tmpResulstFile,$outputFilePath) || confess "\nError: Copy failed: $!: $tmpResulstFile => $outputFilePath\n";
@@ -450,16 +450,16 @@ sub runLocTree2{
 	my $combinedProfileFile=shift;
 	my $outputFilePath=shift;
 	my $errorSeq=shift;
-    my $addSVNOutPath=shift;
+    my $addSVMOutPath=shift;
 
 	if( $debug ) { warn( "\nRunning LocTree2 (profkernel-workflow)." ); }
     my $lc2dataDir = glob($config->val('loctree3', 'lc2datadir'));
     my $baseDir = glob($config->val('loctree3', 'basedir'));
     my $modelPath = File::Spec->catfile($lc2dataDir, $domain."_model");
     my $tmpWorkflowOutFile = File::Spec->catfile($tmpDirPath, $domain."_workflow.txt");
-    my $tmpaddSVNOutPath;
-    if( $addSVNOutPath ){
-        $tmpaddSVNOutPath  = File::Spec->catfile($tmpDirPath, $domain."_workflow.txt.debug");
+    my $tmpaddSVMOutPath;
+    if( $addSVMOutPath ){
+        $tmpaddSVMOutPath  = File::Spec->catfile($tmpDirPath, $domain."_workflow.txt.debug");
     }
 
     # lkajan: call script to handle the large package data
@@ -571,6 +571,7 @@ sub runLocTree2{
 				    }
 				    my $relIndex = ((100*$prob)-20)*10/8;
 				    my $roundedRI = int($relIndex + 0.5);
+                    if($roundedRI<0){$roundedRI = 0;}
                     print TMPRESULTSFILE $id . "\t" . $roundedRI . "\t" . $className . "\t" . $goTerm . "\n";
 		    }	
 	    }
@@ -580,9 +581,9 @@ sub runLocTree2{
 	
 	move($tmpResulstFile,$outputFilePath) || confess "\nError: Copy failed: $!: $tmpResulstFile => $outputFilePath\n";
 
-    if($addSVNOutPath){
-        move($tmpaddSVNOutPath,$addSVNOutPath) || confess "\nError: Copy failed: $!: $tmpaddSVNOutPath => $addSVNOutPath\n";
-        if( !$quiet ){print "\nPrinting LocTree2's SVN results to ".$addSVNOutPath."\n";}
+    if($addSVMOutPath){
+        move($tmpaddSVMOutPath,$addSVMOutPath) || confess "\nError: Copy failed: $!: $tmpaddSVMOutPath => $addSVMOutPath\n";
+        if( !$quiet ){print "\nPrinting LocTree2's SVM results to ".$addSVMOutPath."\n";}
     }
 }
 
@@ -639,7 +640,7 @@ See example outputs in F<__docdir__/examples>
 =head2 Novel aspects
     
  * Incorporation of annotation by sequence homology (PSI-BLAST searches)
- * Printable SVN probability scores along the prediction path of a LocTree2 tree
+ * Printable SVM probability scores along the prediction path of a LocTree2 tree
 
 =head1 REFERENCES
 
@@ -699,9 +700,9 @@ Use your own local database for PSI-BLAST to search against.
 
 Turn off PSI-BLAST and run LocTree2 predictions only
 
-=item -a, --addsvn
+=item -a, --addsvm
 
-Print additional file for LocTree2 predictions containing all SVN outputs
+Print additional file for LocTree2 predictions containing all SVM outputs
 
 
 =back
