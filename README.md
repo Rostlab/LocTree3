@@ -5,3 +5,6 @@ Authors: Tatyana Goldberg <goldberg@rostlab.org>
          Burkhard Rost <rost@rostlab.org>
 Programming language: Perl
 Methodology used: 
+- The method predicts three localization classes in Archaea, six in Bacteria, and 18 in Eukaryota.
+-  * Incorporation of annotation by sequence homology (PSI-BLAST searches)
+   * Printable SVM probability scores along the prediction path of a LocTree2 tree
