@@ -10,7 +10,7 @@ Authors:
 
 Programming language: Perl
 
-Methodology used: 
+Methodology used:
 * The method predicts three localization classes in Archaea, six in Bacteria, and 18 in Eukaryota.
 * Incorporation of annotation by sequence homology (PSI-BLAST searches)
 * Printable SVM probability scores along the prediction path of a LocTree2 tree
@@ -68,7 +68,7 @@ RUN wget -q ftp://ftp.ncbi.nlm.nih.gov/blast/executables/release/LATEST/blast-2.
 RUN /bin/echo -e "[NCBI]\nData=/blast-2.2.26/data/" > ~/.ncbirc && /bin/echo -e "export PATH=$PATH:/blast-2.2.26/bin" >> ~/.bashrc
 ```
 
-To build the docker image put these previous lines in a file called `Dockerfile` and then run 
+To build the docker image put these previous lines in a file called `Dockerfile` and then run
 ```
 docker build -t loctree-docker .
 ```
