@@ -17,8 +17,10 @@ Methodology used:
 
 # Installation
 
+Required environment: you need a Debian repository (tested on Wheezy (7)) or Ubuntu repository (tested on 14). You can also run the prepared [Docker image](#optional-docker).
+
 To install this package, execute the following commands:
-```
+```shell
 git clone git@github.com:Rostlab/LocTree.git
 cd LocTree
 aclocal && autoconf && autoheader; automake --add-missing
