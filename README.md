@@ -74,7 +74,7 @@ docker build -t loctree-docker .
 ```
 After the building is done you can open a bash shell in the docker image by executing:
 ```
-docker run -t -i loctree-docker /bin/bash
+docker run -ti loctree-docker /bin/bash
 ```
 On this virtual image loctree can be used immediately by running for example:
 ```
