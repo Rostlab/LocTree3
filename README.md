@@ -70,7 +70,7 @@ RUN /bin/echo -e "[NCBI]\nData=/blast-2.2.26/data/" > ~/.ncbirc && /bin/echo -e 
 
 To build the docker image put these previous lines in a file called `Dockerfile` and then run 
 ```
-docker build loctree-docker .
+docker build -t loctree-docker .
 ```
 After the building is done you can open a bash shell in the docker image by executing:
 ```
