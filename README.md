@@ -15,6 +15,8 @@ Methodology used:
 * Incorporation of annotation by sequence homology (PSI-BLAST searches)
 * Printable SVM probability scores along the prediction path of a LocTree2 tree
 
+On Elixir Registry: [Loctree3](https://bio.tools/tool/RostLab/LocTree3/1.0.8) (this tool) and [Loctree2](https://bio.tools/tool/tum.de/LocTree2/1) (the older previous method; note, these versions do not match with the repository ones).
+
 # Installation
 
 Required environment: you need a Debian repository (tested on Wheezy (7)) or Ubuntu repository (tested on 14). You can also run the prepared [Docker image](#optional-docker).
