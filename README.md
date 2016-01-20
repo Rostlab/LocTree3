@@ -23,13 +23,13 @@ Required environment: you need a Debian repository (tested on Wheezy (7)) or Ubu
 
 To install this package, execute the following commands:
 ```shell
-git clone git@github.com:Rostlab/LocTree.git
-cd LocTree
+git clone git@github.com:Rostlab/LocTree3.git
+cd LocTree3
 aclocal && autoconf && autoheader; automake --add-missing
 ./configure --prefix=$(pwd)/install
 make && make install
 ```
-**loctree3** executable will be in `LocTree/install/bin`
+**loctree3** executable will be in `LocTree3/install/bin`
 
 Note: make sure to have the following packages installed: `automake make libconfig-inifiles-perl pp-popularity-contest`
 
@@ -49,14 +49,14 @@ export PATH=$PATH:$(pwd)/blast-2.2.26/bin
 ```
 Now it should be possible to run **loctree3**. For example:
 ```
-cd LocTree/install/bin
+cd LocTree3/install/bin
 ./loctree3 -i ../share/doc/loctree3/examples/arch/ --resfile ./arch_output.lc3 --domain arch
 ```
 will generate the output file *arch_output.lc3* with the predicted sub-cellular localization
 
 Reading the man page of loctree3, which offers additional information, can be done the following way:
 ```
-MANPATH=LocTree/install/share/man/ man loctree3
+MANPATH=LocTree3/install/share/man/ man loctree3
 ```
 
 # [Optional] Docker
@@ -66,8 +66,8 @@ Alternatively, the following docker recipe will create a working machine:
 ```
 FROM ubuntu:14.04
 RUN apt-get -y update && apt-get install -y wget unzip automake make libconfig-inifiles-perl pp-popularity-contest
-RUN wget -q https://github.com/Rostlab/LocTree/archive/develop.zip && unzip -q develop.zip
-RUN cd LocTree-develop && aclocal && autoconf && autoheader; automake --add-missing && ./configure && make && make install
+RUN wget -q https://github.com/Rostlab/LocTree3/archive/develop.zip && unzip -q develop.zip
+RUN cd LocTree3-develop && aclocal && autoconf && autoheader; automake --add-missing && ./configure && make && make install
 RUN wget -q ftp://ftp.ncbi.nlm.nih.gov/blast/executables/release/LATEST/blast-2.2.26-x64-linux.tar.gz && tar xf blast-2.2.26-x64-linux.tar.gz
 RUN /bin/echo -e "[NCBI]\nData=/blast-2.2.26/data/" > ~/.ncbirc && /bin/echo -e "export PATH=$PATH:/blast-2.2.26/bin" >> ~/.bashrc
 ```
