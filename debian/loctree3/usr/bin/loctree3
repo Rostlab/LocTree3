@@ -17,7 +17,7 @@ use Getopt::Long;
 # SYSTEM CONFIGURATION RETRIEVAL
 our $config;
 BEGIN {
-    our $VERSION = "1.0.3";
+    our $VERSION = "1.0.9";
     delete @ENV{qw(IFS CDPATH ENV BASH_ENV)};
     my ( $defaultconfig, $etcconfig );
     if( -e "/usr/share/loctree3/loctree3rc.default" ) { $defaultconfig = Config::IniFiles->new( -file => "/usr/share/loctree3/loctree3rc.default" ); }
@@ -31,10 +31,12 @@ if( system('pp_popcon_cnt', '-p', 'loctree3') == -1 ){ warn("The Rost Lab recomm
 ###########################################
 ############# process input ###############
 
-my($inputDirPath,$outputFilePathRef,$domain,$tmpDirPath,$fastaFile,$blastMat,$localDB,$addSVNOutPath);
+my($inputDirPath,$outputFilePathRef,$domain,$tmpDirPath,$fastaFile,$blastMat,$localDB,$addSVMOutPath,$addPSIBLASTOutPath);
 my $debug=0;
+my $addInfo=0;
 my $quiet=0;
 my $noBlast=0;
+my $usecache=0;
 
 my $args_ok=GetOptions( 'indir=s'          =>  \$inputDirPath,
                         'resfile=s'         =>  \$outputFilePathRef,
@@ -44,8 +46,9 @@ my $args_ok=GetOptions( 'indir=s'          =>  \$inputDirPath,
                         'blastmat=s'      => \$blastMat,
                         'nopsiblast+'     =>  \$noBlast,
                         'localdb=s'     =>  \$localDB,
-                        'addsvn=s'  =>  \$addSVNOutPath,
+                        'addinfo+'  =>  \$addInfo,          #psi-blast profile and svm scores for LC2
                         'printdebug+'   => \$debug,
+                        'usecache+'     => \$usecache,
                         'quiet+'        => \$quiet
 );
 
@@ -69,8 +72,9 @@ sub die_usage{
    # say "\n-n, --nrfiles\n\tNumber of protein sequences processed per run. If the number of fasta files in <input directory> exceeds this threshold then the output for the next nrfiles sequences will be written to <output_file>_2. This will be repeated until all sequences in <input directory> are read in";
     say "\n-l, --localdb\n\tUse your own local database for PSI-BLAST to search against";
     say "\n-n, --nopsiblast\n\tTurn off PSI-BLAST and run LocTree2 for predictions only";
-    say "\n-a, --addsvn\n\tPrint additional file for LocTree2 predictions containing all SVN outputs";
+    say "\n-a, --addinfo\n\tPrint additional information in two separate files: sequence profile for PSI-BLAST hits and SVM probabilities for LocTree2";
     say "\n-p, --printdebug\n\tPrint debugging messages";
+    say "\n-u, --usecache\n\tUse predictprotein cache for fast result retrieval";
     say "\n-q, --quiet\n\tSilence progress messages";
     say "\n-t, --tmpdir <directory>\n\tWorking directory. Intermediate files will be saved here. If not given, a temporary directory is used. The temporary directory is automatically removed at the end of a run when debugging is off";
     }; warn "\n$msg\n";
@@ -137,6 +141,15 @@ else {
     $tmpDirPath=tempdir( "loctree3tmpXXXXXXXXXX", DIR => File::Spec->tmpdir(), CLEANUP => !$debug);
 }
 
+#specify files for the additional information of the predictions
+if( $addInfo ) {
+#    $addSVMOutPath = File::Spec->catfile($outputFilePath, ".svm");
+#    $addPSIBLASTOutPath =  File::Spec->catfile($outputFilePath, $domain.".pb");
+    $addSVMOutPath = $outputFilePath.".svm";
+    $addPSIBLASTOutPath = $outputFilePath.".pb";
+}
+my $tmpaddPSIBLASTOutPath = File::Spec->catfile($tmpDirPath, "psiblast.pb");
+
 if( $debug ) { warn( "Working directory: '$tmpDirPath'\n" ); }
 
 # get input files
@@ -159,6 +172,7 @@ if($domain ne "arch" && $domain ne "bact" && $domain ne "euka")
 
 
 if( $debug && ($noBlast == 1)) { warn( "\n--noBlast parameter provided => skipping PSI-BLAST and going straight to LocTree2.\n" ); }
+if( $debug && ($usecache == 1)) { warn( "\n--usecache parameter provided => using PredictProtein cache for results look up. If result available LocTree3 simply copies it.\n" ); }
 
 my $combinedFastaFile= File::Spec->catfile($tmpDirPath, "combinedFastaFile.txt");
 my $combinedProfileFile= File::Spec->catfile($tmpDirPath, "combinedProfileFile.txt");
@@ -166,7 +180,7 @@ my $tmpResulstFile = File::Spec->catfile($tmpDirPath, $domain.".out.txt"); #tmp 
 
 open COMBFASTAFILE, ">$combinedFastaFile" || confess "\nError: Couldn't open kernel input file $combinedFastaFile: $!\n";
 open COMBPROFILEFILE, ">$combinedProfileFile" || confess "\nError: Couldn't open combined fasta file $combinedProfileFile: $!\n";
-open TMPRESULTSFILE, ">>$tmpResulstFile"  || confess "\nError: Couldn't open combined ids file $combinedProfileFile: $!\n";
+open TMPRESULTSFILE, ">>$tmpResulstFile"  || confess "\nError: Couldn't open temporary file with loctree3 predictions $tmpResulstFile: $!\n";
 print TMPRESULTSFILE "# Localization Prediction using LocTree3\n";
 if($domain eq "euka"){
     print TMPRESULTSFILE "# Note: chloroplast and plastid classes are valid for plant proteins only.\n";
@@ -192,11 +206,19 @@ my $fasta;
 my $psiBlastCommand;
 my $isFirstAnnotedByBlast=0; #control variable to print the header in the results file if 0, and not print otherwise.
 my $psiBlastResult="";
+my $loctree2Result="";
+my $loctree2Tree="";
 my $profileFileName="";
 my $profile;
 my $isCorrectProfileFormat=0;
 my $tmpPsiBlastOutFile;
+my @ppfetch;
+my $pid;
+my $lc3resultFromCacheFile;
+my $isLC2ResultInCache=0;
+my $isPBResultInCache=0;
 
+open my $ADDBLASTFILE, '>', $tmpaddPSIBLASTOutPath || confess "\nError: Couldn't open tmp file for PSI-BLAST alignments $tmpaddPSIBLASTOutPath: $!\n";
 foreach my $fastaFileName (@files)
 {
     #read fasta file
@@ -211,6 +233,8 @@ foreach my $fastaFileName (@files)
             $psiBlastResult="";
             
             if(!$fastaFile){$fasta=$inputDirPath."$fastaFileName";} else {$fasta=$fastaFile;}
+            $isPBResultInCache=0;
+            $isLC2ResultInCache=0;
             open FASTAFILE, $fasta || confess "\nError: Couldn't open fasta file $fasta: $!\n";
 			while (my $faLine = <FASTAFILE>) 
 			{ 
@@ -239,14 +263,67 @@ foreach my $fastaFileName (@files)
             if($sequence eq ""){
                 confess("\nFasta file $fasta contains no amino acid sequence.\nThis is not allowed.\nProgram will exit.\n\n");
             }
+            if ($usecache == 1){
+                #### get results from the cache
+                #run pp fetch to retrieve profiles from predict protein
+                @ppfetch = ( "ppc_fetch", "--seq", $sequence );
+                $pid = open( my $ppf_hdl, '-|' );
+
+                #check if ppc_fetch works
+                if( !defined( $pid ) ){
+                    die("failed to fork cmd: @ppfetch");
+                }
+
+                if( !$pid ) {
+                    exec { $ppfetch[0] } @ppfetch;
+                }
+
+                my @lines = <$ppf_hdl>;
+                if( close($ppf_hdl) ){
+                    foreach my $file(@lines){
+                    chomp($file);
+                            if($file =~ /.$domain.lc3.pb$/ && $noBlast == 0){
+                                if( !$quiet ){print "pp_cache psi-blast entries found for $sequence.\n";}
+                                #read it
+                                readPsiBlastADDFileFromCache($file, $seqId, $ADDBLASTFILE);
+                                $isPBResultInCache=1;
+                            } 
+                            elsif($file =~ /.$domain.lc3.svm$/){
+                                if( !$quiet ){print "pp_cache loctree2 entries found for $sequence.\n";}
+                                #read it
+                                $loctree2Tree = $loctree2Tree . readLocTree2ADDFileFromCache($file, $seqId);
+                                $isLC2ResultInCache=1;
+                            }
+                            elsif($file =~ /.$domain.lc3$/){
+                                $lc3resultFromCacheFile = $file;
+                            }
+                    }
+                }
             
-            #run psi-blast with this fasta file
-            if($noBlast == 0){
+                #now read from the prediction result file
+                if($isPBResultInCache==1){
+                    $psiBlastResult = readLC3ResultFileFromCache($lc3resultFromCacheFile, $seqId);
+                }
+                elsif($isLC2ResultInCache==1){
+                    $loctree2Result = $loctree2Result . readLC3ResultFileFromCache($lc3resultFromCacheFile, $seqId);
+                }
+            }
+
+            #if result in the cache identified, run psi-blast with this fasta file
+            if($noBlast == 0 && $isPBResultInCache==0 && $isLC2ResultInCache==0){
                 $tmpPsiBlastOutFile = File::Spec->catfile($tmpDirPath, $fastaCounter.".blastPsiOutTmp");
-                $psiBlastCommand = "blastpgp -F F -a 1 -j 3 -b 50 -e 1e-3 -h 1e-10 -d $modelDB -i $fasta -o $tmpPsiBlastOutFile";
+                $psiBlastCommand = "blastpgp -F F -a 1 -j 3 -b 150 -e 1e-3 -h 1e-10 -d $modelDB -i $fasta -o $tmpPsiBlastOutFile" . ($quiet ? ">/dev/null 2>&1 " : "");
                 if( $debug ) { warn( "Executing PSI-BLAST command:\n$psiBlastCommand\n" ); }
                 system($psiBlastCommand) && confess "\nError running PSI-BLAST command: $!\n";
-                $psiBlastResult = readPsiBlastResult($tmpPsiBlastOutFile, $seqId);
+
+                if($addInfo)
+                {
+                    $psiBlastResult = readPsiBlastResult($tmpPsiBlastOutFile, $seqId, $ADDBLASTFILE);
+                }
+                else 
+                {
+                    $psiBlastResult = readPsiBlastResult($tmpPsiBlastOutFile, $seqId);
+                }
             }
             #psi-blst annotation was successful
             if($psiBlastResult ne "")
@@ -262,13 +339,12 @@ foreach my $fastaFileName (@files)
                     print TMPRESULTSFILE "# Protein Id\tScore\tLocalization\tGene Ontology Terms\n";
                     $isFirstAnnotedByBlast = 1;
                 }
-                {
-                    print TMPRESULTSFILE "$psiBlastResult\n";
-                }
+                
+                    print TMPRESULTSFILE "$psiBlastResult";
             }
             #psi-blst annotation was not successful, so put the sequence and its profile
             #in their corresponding combined files for prediction with loctree2
-            else 
+            else
             {
                 #loctree2 cant work with sequences shorter than 6 residues
                 if(length($sequence)<6){
@@ -277,7 +353,7 @@ foreach my $fastaFileName (@files)
                     $seqId="";
                 }
                 #find the to the fasta file corresponding profile file
-                if(! $seqId eq ""){ 
+                if((! $seqId eq "") && ($isLC2ResultInCache==0)){ 
                     $profileFileName = $fastaFileName;
 			        $profileFileName =~ s/$fileExt/profile/g;
                     if(!$blastMat){
@@ -332,6 +408,7 @@ foreach my $fastaFileName (@files)
 }
 close(COMBFASTAFILE);
 close(COMBPROFILEFILE);
+close($ADDBLASTFILE);
 
 if($fastaCounter==0){
     die_usage("\nError: the directory $inputDirPath contains no fasta files.\n")
@@ -339,14 +416,77 @@ if($fastaCounter==0){
     if( !$quiet ){print "Printing results to ".$outputFilePath."\n";}
 }
 
+#write alignments of best blast hits in the out file if available
+if (-s $tmpaddPSIBLASTOutPath && $addInfo) { #file is not empty
+    if( !$quiet ){print "\nPrinting PSI-BLAST alignments to ".$addPSIBLASTOutPath."\n";}
+    move($tmpaddPSIBLASTOutPath,$addPSIBLASTOutPath) || confess "\nError: Copy failed: $!: $tmpaddPSIBLASTOutPath => $addPSIBLASTOutPath\n";
+}
+
+
 #make predictions with loctree2 
-if($profileFileName ne ""){
-    runLocTree2($profileCounter,$tmpDirPath,$combinedFastaFile,$combinedProfileFile,$outputFilePath,$errorSeq,$addSVNOutPath);
+if(($profileFileName ne "") || ($loctree2Result ne "")){
+    runLocTree2($profileCounter,$tmpDirPath,$combinedFastaFile,$combinedProfileFile,$outputFilePath,$errorSeq,$addSVMOutPath,$loctree2Result,$loctree2Tree);
 }else{
     close (TMPRESULTSFILE);
     move($tmpResulstFile,$outputFilePath) || confess "\nError: Copy failed: $!: $tmpResulstFile => $outputFilePath\n";
 }
 
+##############################################
+####### get the prediction from the loctree3
+####### result file
+sub readLC3ResultFileFromCache{
+
+    my $lc3resultFromCacheFile = shift;
+    my $seqId = shift;
+    my $result;
+
+    open(LC3RESULTFILE, "<$lc3resultFromCacheFile") || confess ("\nError: Unable to open the LocTree3 result file from the cache $lc3resultFromCacheFile: $!\n");
+    while (my $line = <LC3RESULTFILE>){
+        if($line !~ /^#/o){
+            chomp($line);
+            my ($id,$score,$loc,$go)=split("\t",$line);
+            $result="$seqId\t$score\t$loc\t$go\n";
+        }
+    }
+    return $result;
+}
+
+##############################################
+######### get the content of the loctree2 tree
+sub readLocTree2ADDFileFromCache{
+
+    my $resultFileFromCache = shift;
+    my $queryId = shift;
+    my $result="";
+
+    open(CACHEFILE, "<$resultFileFromCache") || confess ("\nError: Unable to open the file with LocTree2 tree/PSI-BLAST alignment from the cache $resultFileFromCache: $!\n");
+    my $line=<CACHEFILE>;
+    $result=$queryId."\n";
+    while ($line = <CACHEFILE>){
+        $result=$result . $line;
+    }
+    close(CACHEFILE);
+
+    return $result;
+}
+
+##############################################
+######### copy the content of the psi-blast
+######### file to the additional results file
+sub readPsiBlastADDFileFromCache{
+
+    my $resultFileFromCache = shift;
+    my $queryId = shift;
+    my $ADDRESULTSFILE = shift;
+
+    open(CACHEFILE, "<$resultFileFromCache") || confess ("\nError: Unable to open the file with LocTree2 tree/PSI-BLAST alignment from the cache $resultFileFromCache: $!\n");
+    my $line = <CACHEFILE>;
+    print $ADDRESULTSFILE "$queryId\n";
+    while ($line = <CACHEFILE>){
+       print $ADDRESULTSFILE "$line"; 
+    }
+    close(CACHEFILE);
+}
 
 #############################################
 ############ read PSI-BLAST result###########
@@ -354,6 +494,7 @@ sub readPsiBlastResult{
 
     my $resultFile = shift;
     my $query = shift; 
+    my $ADDBLASTFILE = shift;
     my $line;
     my $isConverged=0;
     my $hit="";
@@ -365,6 +506,8 @@ sub readPsiBlastResult{
     my $length;
     my $seqId="";
     my $random_number=0;
+    my $alignment;
+    my $bestHitAlignment="";
 
     open(PSIBLASTTMPLC3, "<$resultFile") || confess ("\nError: Unable to open PSI-BLAST predictions file $resultFile: $!\n");
     while (my $line = <PSIBLASTTMPLC3>)
@@ -378,13 +521,16 @@ sub readPsiBlastResult{
             $hit = $1;
             $foundHitLength=0;
             $seqId=0;
+            $alignment="";
+            $alignment=$alignment.$line;
+
 reg_blast_1:
             while ($line = <PSIBLASTTMPLC3>)
             {
                 if($line !~ /Length =/ && $foundHitLength==0 )
                 {
                     $line=~ s/^\s+|\s+$//g;
-                    $hit = $hit . $line;
+                    $hit = $hit ." ". $line;
                 }
                 elsif ($line =~ /Length =/ && $foundHitLength==0)
                 {
@@ -401,6 +547,7 @@ reg_blast_1:
                         $maxSeqId=$seqId;
                         $prevSeqId=$seqId;
                         $bestHit=$hit;
+                        $bestHitAlignment=$alignment;
                     }
                     elsif($prevSeqId == $seqId)
                     {
@@ -410,6 +557,7 @@ reg_blast_1:
                             $maxSeqId=$seqId;
                             $prevSeqId=$seqId;
                             $bestHit=$hit;
+                            $bestHitAlignment=$alignment;
                          }
                     }
                 }
@@ -418,7 +566,17 @@ reg_blast_1:
                     $hit = $1;
                     $foundHitLength=0;
                     $seqId=0;
+                    $alignment="";
+                    $alignment=$alignment.$line;
                     goto reg_blast_1;
+                }
+                if ($line =~ /^  Database:/ )      #reached footer of the blast file
+                {
+                    last;
+                } 
+                elsif($maxSeqId == $seqId) 
+                {
+                    $bestHitAlignment=$bestHitAlignment.$line;
                 }
             }
         }
@@ -434,8 +592,9 @@ reg_blast_1:
         $maxSeqId = sprintf("%.0f",$maxSeqId);
         if($seqId<0){$seqId = 0;}
         my @splitHits = split(/#/,$bestHit);
-        $result = "$query\t$maxSeqId\t$splitHits[1]\t$splitHits[2]";
+        $result = "$query\t$maxSeqId\t$splitHits[1]\t$splitHits[2]\n";
     }
+    if($ADDBLASTFILE && ($bestHitAlignment ne "")) {print $ADDBLASTFILE "$query\n$bestHitAlignment";}
     return $result;
 }
 
@@ -450,16 +609,18 @@ sub runLocTree2{
 	my $combinedProfileFile=shift;
 	my $outputFilePath=shift;
 	my $errorSeq=shift;
-    my $addSVNOutPath=shift;
+    my $addSVMOutPath=shift;
+    my $loctree2ResultFromCache=shift;
+    my $loctree2TreeFromCache=shift;
 
 	if( $debug ) { warn( "\nRunning LocTree2 (profkernel-workflow)." ); }
     my $lc2dataDir = glob($config->val('loctree3', 'lc2datadir'));
     my $baseDir = glob($config->val('loctree3', 'basedir'));
     my $modelPath = File::Spec->catfile($lc2dataDir, $domain."_model");
     my $tmpWorkflowOutFile = File::Spec->catfile($tmpDirPath, $domain."_workflow.txt");
-    my $tmpaddSVNOutPath;
-    if( $addSVNOutPath ){
-        $tmpaddSVNOutPath  = File::Spec->catfile($tmpDirPath, $domain."_workflow.txt.debug");
+    my $tmpaddSVMOutPath;
+    if( $addSVMOutPath ){
+        $tmpaddSVMOutPath  = File::Spec->catfile($tmpDirPath, $domain."_workflow.txt.debug");
     }
 
     # lkajan: call script to handle the large package data
@@ -519,13 +680,13 @@ sub runLocTree2{
 				        $className="nucleus";
                         $goTerm="nucleus GO:0005634";
 				    } elsif($className =~ m/cytopla/o){
-				        $className="cytosol";
+				        $className="cytoplasm";
                         $goTerm="cytoplasm GO:0005737"; 
 				    } elsif($className =~ m/memmito/o){
-				        $className="mitochondria membrane";
+				        $className="mitochondrion membrane";
                         $goTerm="mitochondrial inner membrane GO:0005743; integral to membrane GO:0016021;";           
 				    } elsif($className =~ m/mitochon/o){
-				        $className="mitochondria";
+				        $className="mitochondrion";
                         $goTerm="mitochondrion GO:0005739;";
 				    } elsif($className =~ m/memchlo/o){
 				        $className="chloroplast membrane";
@@ -571,18 +732,29 @@ sub runLocTree2{
 				    }
 				    my $relIndex = ((100*$prob)-20)*10/8;
 				    my $roundedRI = int($relIndex + 0.5);
+                    if($roundedRI<0){$roundedRI = 0;}
                     print TMPRESULTSFILE $id . "\t" . $roundedRI . "\t" . $className . "\t" . $goTerm . "\n";
 		    }	
 	    }
 	    close(WFLOWOUT);
-    }        
+    }    
+    #all results coming from the cache
+    elsif($profileCounter == 0 && $loctree2ResultFromCache ne ""){
+        print TMPRESULTSFILE "#Protein Id\tScore\tLocalization\tGene Ontology Terms\n";
+    }
+    #aapend results found in the cache
+    print TMPRESULTSFILE $loctree2ResultFromCache;
 	close(TMPRESULTSFILE);
 	
 	move($tmpResulstFile,$outputFilePath) || confess "\nError: Copy failed: $!: $tmpResulstFile => $outputFilePath\n";
 
-    if($addSVNOutPath){
-        move($tmpaddSVNOutPath,$addSVNOutPath) || confess "\nError: Copy failed: $!: $tmpaddSVNOutPath => $addSVNOutPath\n";
-        if( !$quiet ){print "\nPrinting LocTree2's SVN results to ".$addSVNOutPath."\n";}
+    if($addSVMOutPath){
+        #append tree found in the cache
+        open(SVMOUTFILE, ">>$tmpaddSVMOutPath") || confess "Error: Unable to open temp loctree2 file with the trees $$tmpaddSVMOutPath: $!\n";
+        print SVMOUTFILE $loctree2TreeFromCache;
+        close(SVMOUTFILE);
+        move($tmpaddSVMOutPath,$addSVMOutPath) || confess "\nError: Copy failed: $!: $tmpaddSVMOutPath => $addSVMOutPath\n";
+        if( !$quiet ){print "\nPrinting LocTree2's SVM results to ".$addSVMOutPath."\n";}
     }
 }
 
@@ -639,7 +811,7 @@ See example outputs in F</usr/share/doc/loctree3/examples>
 =head2 Novel aspects
     
  * Incorporation of annotation by sequence homology (PSI-BLAST searches)
- * Printable SVN probability scores along the prediction path of a LocTree2 tree
+ * Printable SVM probability scores along the prediction path of a LocTree2 tree
 
 =head1 REFERENCES
 
@@ -699,9 +871,13 @@ Use your own local database for PSI-BLAST to search against.
 
 Turn off PSI-BLAST and run LocTree2 predictions only
 
-=item -a, --addsvn
+=item -u, --usecache
 
-Print additional file for LocTree2 predictions containing all SVN outputs
+Use PredictProtein cache for fast result retrieval
+
+=item -a, --addinfo
+
+Print two additional files with PSI-BLAST profiles of best hits (file suffix '.pb') and LocTree2 probability scores along the prediction path (file suffix '.svm')
 
 
 =back
@@ -718,7 +894,7 @@ or
 
 C<loctree3 --fasta /usr/share/doc/loctree3/examples/arch/arch_example.fa --blastmat /usr/share/doc/loctree3/examples/arch/arch_example.profile --resfile ./arch_output.lc3 --nopsiblast --domain arch>
 
-C<loctree3 -f /usr/share/doc/loctree3/examples/euka/euka_example3.f -b /usr/share/doc/loctree3/examples/euka/euka_example3.psiBlast -r ./euka_output.lc3 -a ./euka_output.lc3.svm -d euka>
+C<loctree3 -f /usr/share/doc/loctree3/examples/euka/euka_example3.f -b /usr/share/doc/loctree3/examples/euka/euka_example3.psiBlast -r ./euka_output.lc3 -a -d euka>
 
 =head1 BUGS
 
