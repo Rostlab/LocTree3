@@ -46,7 +46,7 @@ if( !$pkg_data_ver || $pkg_data_ver ne $opt->{'data-version'} )
         }
 
         # untar
-        { my @cmd = ( @sudo, "/bin/tar", "-xzf", "/tmp/$data_tar", $opt->{quiet} ? () : ('--verbose'), '--no-same-owner', '--no-same-permissions', "--strip-components=1", '-C', $opt->{datadir}, "--wildcards", 'loctree2-data-*/*.txt', '--exclude', 'Makefile*', 'loctree2-data-*/COPYING', 'loctree2-data-*/fast_model_*' ); if($dbg){warn("@cmd");} system(@cmd) && confess("Failed to execute @cmd: ".($?>>8)); }
+        { my @cmd = ( @sudo, "/bin/tar", "-xzf", "/tmp/$data_tar", $opt->{quiet} ? () : ('--verbose'), '--no-same-owner', '--no-same-permissions', "--strip-components=1", '-C', $opt->{datadir}, "--wildcards", 'loctree2-data-*/*.txt', '--exclude', 'Makefile*', 'loctree2-data-*/COPYING', 'loctree2-data-*/*_model' ); if($dbg){warn("@cmd");} system(@cmd) && confess("Failed to execute @cmd: ".($?>>8)); }
 
         # remove
         if( !$opt->{'keep-data-tar'} ){ system( @sudo, '/bin/rm', '-f', "/tmp/$data_tar" ); }
