@@ -1,8 +1,8 @@
 Package: loctree3
-Version: 1.0.3
+Version: 1.0.9
 Architecture: amd64
 Maintainer: Tatyana Goldberg <goldberg@rostlab.org>
-Installed-Size: 42532
+Installed-Size: 42497
 Depends: wget, blast2, fastprofkernel
 Section: non-free/science
 Priority: extra
