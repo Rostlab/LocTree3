@@ -10,4 +10,4 @@
 #
 # PSI-BLAST annotation based on Swiss-Prot release 2013_11.
 # Protein Id	Score	Localization	Gene Ontology Terms
-RK16_OEDCA	67	chloroplast	chloroplast GO:0009507(IEA); ribosomeGO:0005840(IEA);
+RK16_OEDCA	100	chloroplast	chloroplast GO:0009507(IEA); ribosome GO:0005840(IEA);

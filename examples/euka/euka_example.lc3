@@ -10,4 +10,4 @@
 #
 # PSI-BLAST annotation based on Swiss-Prot release 2013_11.
 # Protein Id	Score	Localization	Gene Ontology Terms
-PSTA_DICDI	100	secreted	extracellular matrix GO:0031012(TAS);proteinaceous extracellular matrix GO:0005578(IEA);
+PSTA_DICDI	100	secreted	extracellular matrix GO:0031012(TAS); proteinaceous extracellular matrix GO:0005578(IEA);
