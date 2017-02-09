@@ -1,3 +1,39 @@
+loctree3 (1.0.9) unstable; urgency=low
+
+  * Corrected "loctree2-data-*/fast_model_*" to "loctree2-data-*/*_model" in the loctree2data file
+
+ -- Maria Schelling  <mschelling@rostlab.org>  Tue, 07 Feb 2017 17:57:16 +0100
+
+loctree3 (1.0.8) unstable; urgency=low
+
+ * Corrected "bp" to "pb" in the man file, also corrected a bug when using -u parameter
+
+ -- Tatyana Goldberg <goldberg@rostlab.org>  Sun, 09 Mar 2014 18:42:40 +0200
+
+loctree3 (1.0.7) unstable; urgency=low
+
+ * Added --usecache parameter to get results from the cache, if available
+
+ -- Tatyana Goldberg <goldberg@rostlab.org>  Mon, 03 Mar 2014 18:42:40 +0200
+
+loctree3 (1.0.6) unstable; urgency=low
+
+ * Silenced blast so that --quiet is really quiet now
+
+ -- Tatyana Goldberg <goldberg@rostlab.org>  Tue, 25 Feb 2014 18:42:40 +0200
+
+loctree3 (1.0.5) unstable; urgency=low
+
+ * Printing psi-blast profiles with the --addinfo argument now
+
+ -- Tatyana Goldberg <goldberg@rostlab.org>  Fri, 13 Dec 2013 18:42:40 +0200
+
+loctree3 (1.0.4) unstable; urgency=low
+
+  * Adapted loc classes, so that they are the same for blast and lc2
+
+ -- Tatyana Goldberg <goldberg@rostlab.org>  Mon, 08 Dec 2013 18:42:40 +0200
+
 loctree3 (1.0.3) unstable; urgency=low
 
   * Fixed minor changes in man page
