@@ -79,7 +79,7 @@ MANPATH=LocTree3/install/share/man/ man loctree3
 
 Alternatively, the following docker recipe will create a working machine:
 
-```
+```Dockerfile
 FROM ubuntu:14.04
 RUN apt-get -y update && apt-get install -y wget unzip automake make libconfig-inifiles-perl pp-popularity-contest
 RUN wget -q https://github.com/Rostlab/LocTree3/archive/develop.zip && unzip -q develop.zip
@@ -89,14 +89,16 @@ RUN /bin/echo -e "[NCBI]\nData=/blast-2.2.26/data/" > ~/.ncbirc && /bin/echo -e 
 ```
 
 To build the docker image put these previous lines in a file called `Dockerfile` and then run
-```
+```shell
 docker build -t loctree-docker .
 ```
+
 After the building is done you can open a bash shell in the docker image by executing:
-```
+```shell
 docker run -ti loctree-docker /bin/bash
 ```
+
 On this virtual image loctree can be used immediately by running for example:
-```
+```shell
 loctree3 -i /usr/local/share/doc/loctree3/examples/arch/ --resfile ./arch_output.lc3 --domain arch
 ```
