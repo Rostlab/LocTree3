@@ -22,6 +22,7 @@ On Elixir Registry: [Loctree3](https://bio.tools/tool/RostLab/LocTree3/1.0.8) (t
 Required environment: you need a Debian repository (tested on Wheezy (7)) or Ubuntu repository (tested on 14). You can also run the prepared [Docker image](#optional-docker).
 
 To install this package, execute the following commands:
+
 ```shell
 git clone git@github.com:Rostlab/LocTree3.git
 cd LocTree3
@@ -29,11 +30,18 @@ aclocal && autoconf && autoheader; automake --add-missing
 ./configure --prefix=$(pwd)/install
 make && make install
 ```
+
 **loctree3** executable will be in `LocTree3/install/bin`
 
-Note: make sure to have the following packages installed: `automake make libconfig-inifiles-perl pp-popularity-contest`
+Note: make sure to have the following packages installed: 
 
-# Usage
+## Dependencies
+
+### Debian packages
+
+Install: `automake make libconfig-inifiles-perl pp-popularity-contest`
+
+### blastpgp
 
 To use **loctree3** it is necessary to have blastpgp, which can be obtained by downloading the package *blast-2.2.26* for the corresponding platform from the following FTP: ftp://ftp.ncbi.nlm.nih.gov/blast/executables/release/LATEST/
 
@@ -44,22 +52,30 @@ tar xf blast-2.2.26-x64-linux.tar.gz
 echo -e "[NCBI]\nData=$(pwd)/blast-2.2.26/data/" > ~/.ncbirc
 ```
 The location of the **blastpgp** binaries must also be added tho the PATH environment variable:
-```
+
+```shell
 export PATH=$PATH:$(pwd)/blast-2.2.26/bin
 ```
-Now it should be possible to run **loctree3**. For example:
-```
+
+# Usage
+
+For example:
+
+```shell
 cd LocTree3/install/bin
 ./loctree3 -i ../share/doc/loctree3/examples/arch/ --resfile ./arch_output.lc3 --domain arch
 ```
 will generate the output file *arch_output.lc3* with the predicted sub-cellular localization
 
 Reading the man page of loctree3, which offers additional information, can be done the following way:
-```
+
+```shell
 MANPATH=LocTree3/install/share/man/ man loctree3
 ```
 
-# [Optional] Docker
+---
+
+# Docker
 
 Alternatively, the following docker recipe will create a working machine:
 
