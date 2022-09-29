@@ -1,3 +1,9 @@
+loctree3 (1.0.10) unstable; urgency=low
+
+  * Change URL of data files
+
+ -- Timothy Karl <karl@rostlab.org>  Thu, 29 Sep 2022 11:38:00 +0200
+
 loctree3 (1.0.9) unstable; urgency=low
 
   * Corrected "loctree2-data-*/fast_model_*" to "loctree2-data-*/*_model" in the loctree2data file
